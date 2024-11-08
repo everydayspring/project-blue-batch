@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @Table(name = "users_copy")
-public class UserCopy  extends BaseEntity {
+public class UserCopy extends BaseEntity {
 
     @Column(unique = true, length = 255)
     private String email;

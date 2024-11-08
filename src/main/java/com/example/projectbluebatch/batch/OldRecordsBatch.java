@@ -1,8 +1,6 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.entity.User;
-import com.example.projectbluebatch.entity.UserCopy;
-import com.example.projectbluebatch.repository.UserCopyRepository;
 import com.example.projectbluebatch.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -30,10 +28,9 @@ public class OldRecordsBatch {
     private final PlatformTransactionManager platformTransactionManager;
 
     private final UserRepository userRepository;
-    private final UserCopyRepository userCopyRepository;
 
     @Bean
-    public Job OldRecordsBatchJop() {
+    public Job OldRecordsBatchJob() {
 
         return new JobBuilder("OldRecordsBatchJop", jobRepository)
                 .start(oldUserStep())
@@ -45,7 +42,7 @@ public class OldRecordsBatch {
     public Step oldUserStep() {
 
         return new StepBuilder("oldUserStep", jobRepository)
-                .<User, User> chunk(500, platformTransactionManager)
+                .<User, User>chunk(500, platformTransactionManager)
                 // chunk -> 몇개씩 끊어서 작업할건지
                 // 데이터 양과 메모리 성능을 고려해서 결정함
                 // 너무 작으면 오버헤드 발생, 너무 크면 자원 사용에 대한 비용과 실패 부담이 큼
