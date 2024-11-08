@@ -3,6 +3,3 @@ spring:
     name: project-blue-batch
   profiles:
     active: local
-  batch:
-    job:
-      enabled: false
