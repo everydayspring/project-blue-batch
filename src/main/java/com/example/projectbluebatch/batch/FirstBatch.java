@@ -61,7 +61,7 @@ public class FirstBatch {
         return new RepositoryItemReaderBuilder<User>()
                 .name("beforeReader")
                 .pageSize(50) // 데이터 읽을때 끊어서 읽을때
-                .methodName("find All") // JPA 쿼리 이름
+                .methodName("findAll") // JPA 쿼리 이름
                 .repository(userRepository)
                 .sorts(Map.of("id", Sort.Direction.ASC))
                 .build();
