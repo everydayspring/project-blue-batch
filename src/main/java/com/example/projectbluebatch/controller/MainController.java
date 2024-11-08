@@ -30,4 +30,16 @@ public class MainController {
 
         return "ok";
     }
+
+    @GetMapping("/oldRecordsBatch")
+    public String oldRecordsBatchApi(@RequestParam("date") String date) throws Exception {
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("date", date)
+                .toJobParameters();
+
+        jobLauncher.run(jobRegistry.getJob("OldRecordsBatchJop"), jobParameters);
+
+        return "Old records batch job executed";
+    }
 }

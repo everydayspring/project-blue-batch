@@ -31,30 +31,11 @@ public class User extends BaseEntity {
     @Column(name = "is_deleted")
     private boolean isDeleted;
 
-    public User(String email, String name, String password, UserRole userRole) {
-
-        this.email = email;
-        this.name = name;
-        this.password = password;
-        this.userRole = userRole;
-    }
-
-    public User(String email, String name, String password, UserRole userRole, Long kakaoId) {
-
-        this.email = email;
-        this.name = name;
-        this.password = password;
-        this.userRole = userRole;
-        this.kakaoId = kakaoId;
-    }
+    @Column(name = "salck_id")
+    private Long slackId;
 
     public void userDeleted() {
 
         this.isDeleted = true;
-    }
-
-    public void InsertKakaoId(Long kakaoId) {
-
-        this.kakaoId = kakaoId;
     }
 }
