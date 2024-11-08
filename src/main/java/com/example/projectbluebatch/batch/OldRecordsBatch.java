@@ -1,5 +1,6 @@
 package com.example.projectbluebatch.batch;
 
+import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import com.example.projectbluebatch.entity.Reservation;
 import com.example.projectbluebatch.entity.User;
 import com.example.projectbluebatch.repository.ReservationRepository;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class OldRecordsBatch {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
+    private final JobTimeExecutionListener jobTimeExecutionListener;
 
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
@@ -38,6 +40,7 @@ public class OldRecordsBatch {
         return new JobBuilder("OldRecordsBatchJob", jobRepository)
                 .start(oldUserStep())
                 .next(oldReservationStep())
+                .listener(jobTimeExecutionListener) // Listener 등록
                 .build();
     }
 

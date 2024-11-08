@@ -1,5 +1,7 @@
 package com.example.projectbluebatch.batch;
 
+import com.example.projectbluebatch.config.DataDBConfig;
+import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import com.example.projectbluebatch.entity.User;
 import com.example.projectbluebatch.entity.UserCopy;
 import com.example.projectbluebatch.repository.UserCopyRepository;
@@ -15,9 +17,13 @@ import org.springframework.batch.item.data.RepositoryItemReader;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
 import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Map;
@@ -28,6 +34,8 @@ public class FirstBatch {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
+    private final DataDBConfig dataDBConfig; // DataDBConfig 주입 받음
+    private final JobTimeExecutionListener jobTimeExecutionListener; // Listener 주입
 
     private final UserRepository userRepository;
     private final UserCopyRepository userCopyRepository;
@@ -38,6 +46,7 @@ public class FirstBatch {
         return new JobBuilder("firstJob", jobRepository)
                 .start(firstStep())
 //                .next() // job이 여러개인 경우
+                .listener(jobTimeExecutionListener) // Listener 등록
                 .build();
     }
 
@@ -49,9 +58,9 @@ public class FirstBatch {
                 // chunk -> 몇개씩 끊어서 작업할건지
                 // 데이터 양과 메모리 성능을 고려해서 결정함
                 // 너무 작으면 오버헤드 발생, 너무 크면 자원 사용에 대한 비용과 실패 부담이 큼
-                .reader(beforeReader())
+                .reader(jdbcBeforeReader())
                 .processor(middleProcessor())
-                .writer(afterWriter())
+                .writer(jdbcAfterWriter())
                 .build();
     }
 
@@ -65,6 +74,15 @@ public class FirstBatch {
                 .repository(userRepository)
                 .sorts(Map.of("id", Sort.Direction.ASC))
                 .build();
+    }
+
+    @Bean
+    public JdbcCursorItemReader<User> jdbcBeforeReader() {
+        JdbcCursorItemReader<User> reader = new JdbcCursorItemReader<>();
+        reader.setDataSource(dataDBConfig.dataDBSource());
+        reader.setSql("SELECT * FROM users ORDER BY id ASC");
+        reader.setRowMapper(new BeanPropertyRowMapper<>(User.class));
+        return reader;
     }
 
     @Bean
@@ -90,4 +108,21 @@ public class FirstBatch {
                 .build();
     }
 
+    @Bean
+    public JdbcBatchItemWriter<UserCopy> jdbcAfterWriter() {
+        JdbcBatchItemWriter<UserCopy> writer = new JdbcBatchItemWriter<>();
+        writer.setDataSource(dataDBConfig.dataDBSource());
+        writer.setSql("INSERT INTO users_copy (name, email, password, user_role, kakao_id) " +
+                "VALUES (:name, :email, :password, :userRole, :kakaoId)");
+        writer.setItemSqlParameterSourceProvider(user -> {
+            MapSqlParameterSource paramSource = new MapSqlParameterSource();
+            paramSource.addValue("name", user.getName());
+            paramSource.addValue("email", user.getEmail());
+            paramSource.addValue("password", user.getPassword());
+            paramSource.addValue("userRole", user.getUserRole());
+            paramSource.addValue("kakaoId", user.getKakaoId());
+            return paramSource;
+        });
+        return writer;
+    }
 }
