@@ -1,6 +1,6 @@
 package com.example.projectbluebatch.repository;
 
-import com.example.projectbluebatch.entity.User;
+import com.example.projectbluebatch.entity.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,8 +9,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    @Query("SELECT u FROM User u WHERE u.modifiedAt <= :targetDate AND u.isDeleted = false")
-    Page<User> findAllOldUser(@Param("targetDate") LocalDateTime targetDate, Pageable pageable);
+    @Query("SELECT r FROM Reservation r WHERE r.modifiedAt <= :targetDate")
+    Page<Reservation> findAllOldReservation(@Param("targetDate") LocalDateTime targetDate, Pageable pageable);
 }

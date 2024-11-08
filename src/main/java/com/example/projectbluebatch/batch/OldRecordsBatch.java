@@ -1,6 +1,8 @@
 package com.example.projectbluebatch.batch;
 
+import com.example.projectbluebatch.entity.Reservation;
 import com.example.projectbluebatch.entity.User;
+import com.example.projectbluebatch.repository.ReservationRepository;
 import com.example.projectbluebatch.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -27,14 +29,15 @@ public class OldRecordsBatch {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
 
+    private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
 
     @Bean
     public Job OldRecordsBatchJob() {
 
-        return new JobBuilder("OldRecordsBatchJop", jobRepository)
+        return new JobBuilder("OldRecordsBatchJob", jobRepository)
                 .start(oldUserStep())
-//                .next() // job이 여러개인 경우
+                .next(oldReservationStep())
                 .build();
     }
 
@@ -54,13 +57,13 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemReader<User> oldUserReader() {
-        LocalDateTime threeYearsAgo = LocalDateTime.now().minusYears(3);
+        LocalDateTime targetDate = LocalDateTime.now().minusYears(3);
 
         return new RepositoryItemReaderBuilder<User>()
                 .name("oldUserReader")
-                .pageSize(10)
-                .methodName("findAllCreatedBefore")
-                .arguments(threeYearsAgo)
+                .pageSize(50)
+                .methodName("findAllOldUser")
+                .arguments(targetDate)
                 .repository(userRepository)
                 .sorts(Map.of("id", Sort.Direction.ASC))
                 .build();
@@ -79,6 +82,39 @@ public class OldRecordsBatch {
         return new RepositoryItemWriterBuilder<User>()
                 .repository(userRepository)
                 .methodName("save")
+                .build();
+    }
+
+    @Bean
+    public Step oldReservationStep() {
+
+        return new StepBuilder("oldReservationStep", jobRepository)
+                .<Reservation, Reservation>chunk(500, platformTransactionManager)
+                .reader(oldReservationReader())
+                .writer(oldReservationWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<Reservation> oldReservationReader() {
+        LocalDateTime targetDate = LocalDateTime.now().minusYears(10);
+
+        return new RepositoryItemReaderBuilder<Reservation>()
+                .name("oldReservationReader")
+                .pageSize(50)
+                .methodName("findAllOldReservation")
+                .arguments(targetDate)
+                .repository(reservationRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+
+    @Bean
+    public RepositoryItemWriter<Reservation> oldReservationWriter() {
+        return new RepositoryItemWriterBuilder<Reservation>()
+                .repository(reservationRepository)
+                .methodName("delete")
                 .build();
     }
 }

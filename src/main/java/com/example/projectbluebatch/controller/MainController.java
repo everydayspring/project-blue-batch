@@ -27,8 +27,7 @@ public class MainController {
 
         jobLauncher.run(jobRegistry.getJob("firstJob"), jobParameters);
 
-
-        return "ok";
+        return "First job executed";
     }
 
     @GetMapping("/oldRecordsBatch")
@@ -38,7 +37,7 @@ public class MainController {
                 .addString("date", date)
                 .toJobParameters();
 
-        jobLauncher.run(jobRegistry.getJob("OldRecordsBatchJop"), jobParameters);
+        jobLauncher.run(jobRegistry.getJob("OldRecordsBatchJob"), jobParameters);
 
         return "Old records batch job executed";
     }
