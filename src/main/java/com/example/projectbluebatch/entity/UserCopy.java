@@ -57,4 +57,13 @@ public class UserCopy  extends BaseEntity {
 
         this.kakaoId = kakaoId;
     }
+
+    public void copy(User user) {
+        this.email = user.getEmail();
+        this.name = user.getName();
+        this.password = user.getPassword();
+        this.userRole = user.getUserRole();
+        this.kakaoId = user.getKakaoId();
+        this.isDeleted = user.isDeleted();
+    }
 }

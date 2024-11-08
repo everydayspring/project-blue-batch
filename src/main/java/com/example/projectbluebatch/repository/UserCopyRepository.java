@@ -1,7 +1,7 @@
 package com.example.projectbluebatch.repository;
 
-import com.example.projectbluebatch.entity.User;
+import com.example.projectbluebatch.entity.UserCopy;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserCopyRepository extends JpaRepository<User, Long> {
+public interface UserCopyRepository extends JpaRepository<UserCopy, Long> {
 }
