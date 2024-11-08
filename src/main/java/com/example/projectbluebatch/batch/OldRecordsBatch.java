@@ -1,8 +1,10 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.config.JobTimeExecutionListener;
+import com.example.projectbluebatch.entity.Payment;
 import com.example.projectbluebatch.entity.Reservation;
 import com.example.projectbluebatch.entity.User;
+import com.example.projectbluebatch.repository.PaymentRepository;
 import com.example.projectbluebatch.repository.ReservationRepository;
 import com.example.projectbluebatch.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -31,6 +33,7 @@ public class OldRecordsBatch {
     private final PlatformTransactionManager platformTransactionManager;
     private final JobTimeExecutionListener jobTimeExecutionListener;
 
+    private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
 
@@ -40,6 +43,7 @@ public class OldRecordsBatch {
         return new JobBuilder("OldRecordsBatchJob", jobRepository)
                 .start(oldUserStep())
                 .next(oldReservationStep())
+                .next(oldPaymentStep())
                 .listener(jobTimeExecutionListener) // Listener 등록
                 .build();
     }
@@ -117,6 +121,39 @@ public class OldRecordsBatch {
     public RepositoryItemWriter<Reservation> oldReservationWriter() {
         return new RepositoryItemWriterBuilder<Reservation>()
                 .repository(reservationRepository)
+                .methodName("delete")
+                .build();
+    }
+
+    @Bean
+    public Step oldPaymentStep() {
+
+        return new StepBuilder("oldPaymentStep", jobRepository)
+                .<Payment, Payment>chunk(500, platformTransactionManager)
+                .reader(oldPaymentReader())
+                .writer(oldPaymentWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<Payment> oldPaymentReader() {
+        LocalDateTime targetDate = LocalDateTime.now().minusYears(10);
+
+        return new RepositoryItemReaderBuilder<Payment>()
+                .name("oldPaymentReader")
+                .pageSize(50)
+                .methodName("findAllOldPayment")
+                .arguments(targetDate)
+                .repository(paymentRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+
+    @Bean
+    public RepositoryItemWriter<Payment> oldPaymentWriter() {
+        return new RepositoryItemWriterBuilder<Payment>()
+                .repository(paymentRepository)
                 .methodName("delete")
                 .build();
     }
