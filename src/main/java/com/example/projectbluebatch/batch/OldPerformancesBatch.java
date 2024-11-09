@@ -47,12 +47,12 @@ public class OldPerformancesBatch {
     private List<Long> deleteReservationIds;
 
     @Bean
-    public Job OldPerformancesJob() {
+    public Job oldPerformancesBatchJob() {
 
         deletePerformanceIds = new ArrayList<>();
         deleteReservationIds = new ArrayList<>();
 
-        return new JobBuilder("OldPerformancesBatchJob", jobRepository)
+        return new JobBuilder("oldPerformancesBatchJob", jobRepository)
                 .start(oldPerformanceStep())
                 .next(oldPerformanceReservationStep())
                 .next(oldPerformanceReservedSeatStep())
