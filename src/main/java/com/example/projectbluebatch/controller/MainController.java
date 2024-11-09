@@ -32,16 +32,29 @@ public class MainController {
         return "First job executed";
     }
 
-    @GetMapping("/oldRecordsBatch")
-    public String oldRecordsBatchApi() throws Exception {
+    @GetMapping("/OldUsersBatch")
+    public String oldUsersBatchApi() throws Exception {
         LocalDateTime now = LocalDateTime.now();
 
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("timestamp", now.toString())
                 .toJobParameters();
 
-        jobLauncher.run(jobRegistry.getJob("OldRecordsBatchJob"), jobParameters);
+        jobLauncher.run(jobRegistry.getJob("OldUsersBatchJob"), jobParameters);
 
-        return "Old records batch job executed";
+        return "Old users batch job executed";
+    }
+
+    @GetMapping("/oldPerformancesBatch")
+    public String oldPerformancesBatchApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+
+        jobLauncher.run(jobRegistry.getJob("OldPerformancesBatchJob"), jobParameters);
+
+        return "Old performances batch job executed";
     }
 }

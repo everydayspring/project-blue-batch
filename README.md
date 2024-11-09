@@ -79,31 +79,32 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
 매달 1일 실행
 
 - Alert
-    - 조건 : modifiedAt 3년 전인경우
+    - 조건 : modifiedAt 2년 전인 경우
     - 비밀번호를 3년이상 변경하지 않은 회원은 탈퇴처리 됩니다
     - 비밀번호를 변경해주세요
 
 - user
-  - 조건 : modifiedAt 3년 전인경우
+  - 조건 : modifiedAt 3년 전인 경우
   - isDeleted true 변경 O
   - 연결된 예매내역 삭제 O
     - 예매내역에 연결된 좌석 삭제 O
     - 예매내역에 연결된 결제 삭제 O
-  - 리뷰 삭제 O
-  - 사용 쿠폰 삭제
+    - 예매내역에 연결된 리뷰 삭제 O
+    - 예매내역에 연결된 사용 쿠폰 삭제 O
 
 ### oldPerformances
 
 매달 1일 실행
 
 - performance
-  - 조건 : endDate 10년 전인경우
+  - 조건 : endDate 10년 전인 경우
   - performance 삭제
-  - 연결된 예매내역 삭제
-    - 예매내역에 연결된 좌석 삭제
-    - 예매내역에 연결된 결제 삭제
-    - 예매내역에 연결된 사용 쿠폰 삭제
-  - 연결된 리뷰 삭제
+  - 연결된 예매내역 삭제 O
+    - 예매내역에 연결된 좌석 삭제 O
+    - 예매내역에 연결된 결제 삭제 O
+    - 예매내역에 연결된 리뷰 삭제 O
+    - 예매내역에 연결된 사용 쿠폰 삭제 O
+  - 연결된 회차 삭제
   - 연결된 출연자 삭제
   - 연결된 포스터 삭제
 
