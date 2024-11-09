@@ -101,9 +101,8 @@ public class UpcomingReservationAlertBatch {
 
         return new StepBuilder("upcomingReservationAlertSlackStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
-                    System.out.println(alertInfos.size() + "=========================================================");
                     alertInfos.forEach(alertInfo -> {
-                        String title = "[관람일 안내]";
+                        String title = "[관람일 D-1]";
                         String userTag = "<@" + alertInfo.getSlackId() + ">";
 
                         String message = String.format(
