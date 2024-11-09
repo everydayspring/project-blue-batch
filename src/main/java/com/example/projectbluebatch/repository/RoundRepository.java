@@ -10,5 +10,4 @@ import java.util.List;
 public interface RoundRepository extends JpaRepository<Round, Long> {
 
     Page<Round> findByPerformanceIdIn(List<Long> performanceIds, Pageable pageable);
-
 }

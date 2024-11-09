@@ -48,7 +48,7 @@ public class OldUsersAlertBatch {
 
         return new JobBuilder("oldUsersAlertBatchJob", jobRepository)
                 .start(oldUserAlertStep())
-                .next(slackAlertStep())
+                .next(oldUserAlertSlackStep())
                 .listener(jobTimeExecutionListener)
                 .build();
     }
@@ -98,7 +98,7 @@ public class OldUsersAlertBatch {
     }
 
     @Bean
-    public Step slackAlertStep() {
+    public Step oldUserAlertSlackStep() {
 
         return new StepBuilder("slackAlertStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {

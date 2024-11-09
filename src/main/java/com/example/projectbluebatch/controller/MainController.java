@@ -81,8 +81,16 @@ public class MainController {
 
         jobLauncher.run(jobRegistry.getJob("timeoutReservationBatchJob"), jobParameters);
 
-        return "Old timeoutReservationBatch batch job executed";
+        return "Timeout reservation batch job executed";
     }
 
-
+    @GetMapping("/upcomingReservationAlertBatch")
+    public String upcomingReservationAlertBatchApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+        jobLauncher.run(jobRegistry.getJob("upcomingReservationAlertBatchJob"), jobParameters);
+        return "Upcoming reservation alert batch job executed";
+    }
 }
