@@ -84,8 +84,6 @@ public class OldUsersAlertBatch {
 
         return user -> {
             alertUsers.add(new AlertUser(user.getName(), user.getSlackId()));
-            System.out.println("==============================>" + user.getId());
-            System.out.println("Processing user with Slack ID: " + user.getSlackId());
             return user;
         };
     }
