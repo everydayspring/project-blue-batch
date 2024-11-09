@@ -1,6 +1,7 @@
 package com.example.projectbluebatch.repository;
 
 import com.example.projectbluebatch.entity.Payment;
+import com.example.projectbluebatch.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,4 +17,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Page<Payment> findAllOldPayment(@Param("targetDate") LocalDateTime targetDate, Pageable pageable);
 
     Page<Payment> findByReservationIdIn(List<Long> reservationIds, Pageable pageable);
+
+    Page<Payment> findByStatusAndReservationIdIn(PaymentStatus paymentStatus , List<Long> reservationIds, Pageable pageable);
 }

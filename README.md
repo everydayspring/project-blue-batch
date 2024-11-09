@@ -116,14 +116,8 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
   - 조건 : 예매 날짜가 어제인 경우 AND 결제 정보 없음 AND PENDING 상태
   - 예매 취소 처리
   - 예매 좌석 삭제
-
-### TimeoutPayment
-
-매일 자정 실행
-
-- payment
-  - 조건 : READY AND modifiedAt이 30분 전보다 작은경우
-  - usedCoupon이 어느시점에 저장되는지 확인이 필요함
+  - 결제 정보 취소처리
+  - 사용 쿠폰 삭제
 
 ### UpcomingReservationAlert
 

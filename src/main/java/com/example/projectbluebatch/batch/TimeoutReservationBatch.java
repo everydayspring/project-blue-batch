@@ -1,8 +1,12 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.config.JobTimeExecutionListener;
+import com.example.projectbluebatch.entity.Payment;
 import com.example.projectbluebatch.entity.Reservation;
 import com.example.projectbluebatch.entity.ReservedSeat;
+import com.example.projectbluebatch.entity.UsedCoupon;
+import com.example.projectbluebatch.enums.PaymentStatus;
+import com.example.projectbluebatch.repository.PaymentRepository;
 import com.example.projectbluebatch.repository.ReservationRepository;
 import com.example.projectbluebatch.repository.ReservedSeatRepository;
 import com.example.projectbluebatch.repository.UsedCouponRepository;
@@ -36,6 +40,7 @@ public class TimeoutReservationBatch {
     private final PlatformTransactionManager platformTransactionManager;
     private final JobTimeExecutionListener jobTimeExecutionListener;
 
+    private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
     private final ReservedSeatRepository reservedSeatRepository;
     private final UsedCouponRepository usedCouponRepository;
@@ -50,6 +55,8 @@ public class TimeoutReservationBatch {
         return new JobBuilder("timeoutReservationBatchJob", jobRepository)
                 .start(timeoutReservationStep())
                 .next(timeoutReservationSeatStep())
+                .next(timeoutReservationPaymentStep())
+                .next(timeoutReservationUsedCouponStep())
                 .listener(jobTimeExecutionListener)
                 .build();
     }
@@ -102,7 +109,7 @@ public class TimeoutReservationBatch {
     @Bean
     public Step timeoutReservationSeatStep() {
 
-        return new StepBuilder("oldPerformanceReservedSeatStep", jobRepository)
+        return new StepBuilder("timeoutReservationSeatStep", jobRepository)
                 .<ReservedSeat, ReservedSeat>chunk(500, platformTransactionManager)
                 .reader(timeoutReservationSeatReader())
                 .writer(timeoutReservationSeatWriter())
@@ -113,7 +120,7 @@ public class TimeoutReservationBatch {
     public RepositoryItemReader<ReservedSeat> timeoutReservationSeatReader() {
 
         return new RepositoryItemReaderBuilder<ReservedSeat>()
-                .name("deleteReservationSeatStepReader")
+                .name("timeoutReservationSeatReader")
                 .pageSize(50)
                 .methodName("findByReservationIdIn")
                 .arguments(Collections.singletonList(timeoutReservationIds))
@@ -127,6 +134,80 @@ public class TimeoutReservationBatch {
 
         return new RepositoryItemWriterBuilder<ReservedSeat>()
                 .repository(reservedSeatRepository)
+                .methodName("delete")
+                .build();
+    }
+
+    @Bean
+    public Step timeoutReservationPaymentStep() {
+
+        return new StepBuilder("timeoutReservationPaymentStep", jobRepository)
+                .<Payment, Payment>chunk(500, platformTransactionManager)
+                .reader(timeoutReservationPaymentReader())
+                .processor(timeoutReservationPaymentProcessor())
+                .writer(timeoutReservationPaymentWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<Payment> timeoutReservationPaymentReader() {
+
+        return new RepositoryItemReaderBuilder<Payment>()
+                .name("timeoutReservationPaymentReader")
+                .pageSize(50)
+                .methodName("findByStatusAndReservationIdIn")
+                .arguments(PaymentStatus.READY, timeoutReservationIds) // 수정된 부분
+                .repository(paymentRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+    @Bean
+    public ItemProcessor<Payment, Payment> timeoutReservationPaymentProcessor() {
+
+        return payment -> {
+            payment.canceled();
+            return payment;
+        };
+    }
+
+    @Bean
+    public RepositoryItemWriter<Payment> timeoutReservationPaymentWriter() {
+
+        return new RepositoryItemWriterBuilder<Payment>()
+                .repository(paymentRepository)
+                .methodName("save")
+                .build();
+    }
+
+    @Bean
+    public Step timeoutReservationUsedCouponStep() {
+
+        return new StepBuilder("timeoutReservationUsedCouponStep", jobRepository)
+                .<UsedCoupon, UsedCoupon>chunk(500, platformTransactionManager)
+                .reader(timeoutReservationUsedCouponReader())
+                .writer(timeoutReservationUsedCouponWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<UsedCoupon> timeoutReservationUsedCouponReader() {
+
+        return new RepositoryItemReaderBuilder<UsedCoupon>()
+                .name("timeoutReservationUsedCouponReader")
+                .pageSize(50)
+                .methodName("findByReservationIdIn")
+                .arguments(Collections.singletonList(timeoutReservationIds))
+                .repository(usedCouponRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemWriter<UsedCoupon> timeoutReservationUsedCouponWriter() {
+
+        return new RepositoryItemWriterBuilder<UsedCoupon>()
+                .repository(usedCouponRepository)
                 .methodName("delete")
                 .build();
     }

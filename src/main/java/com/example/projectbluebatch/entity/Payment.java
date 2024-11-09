@@ -58,4 +58,8 @@ public class Payment extends BaseEntity {
 
     @Column(nullable = false, length = 30, name = "order_id")
     private String orderId;
+
+    public void canceled() {
+        this.status = PaymentStatus.CANCELED;
+    }
 }
