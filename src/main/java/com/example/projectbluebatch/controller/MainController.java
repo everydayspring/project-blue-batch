@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.time.LocalDateTime;
+
 @Controller
 @ResponseBody
 @AllArgsConstructor
@@ -31,10 +33,11 @@ public class MainController {
     }
 
     @GetMapping("/oldRecordsBatch")
-    public String oldRecordsBatchApi(@RequestParam("date") String date) throws Exception {
+    public String oldRecordsBatchApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("date", date)
+                .addString("timestamp", now.toString())
                 .toJobParameters();
 
         jobLauncher.run(jobRegistry.getJob("OldRecordsBatchJob"), jobParameters);

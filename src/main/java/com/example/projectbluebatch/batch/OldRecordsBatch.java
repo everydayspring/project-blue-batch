@@ -24,7 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.*;
 
 @Configuration
 @AllArgsConstructor
@@ -37,11 +37,17 @@ public class OldRecordsBatch {
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
 
+    private List<Long> deleteUserIds;
+
+    private final Set<Long> deleteReservationIds = new HashSet<>();
+
     @Bean
     public Job OldRecordsBatchJob() {
+        deleteUserIds = new ArrayList<>();
 
         return new JobBuilder("OldRecordsBatchJob", jobRepository)
                 .start(oldUserStep())
+                .next(oldUserReservationStep())
                 .next(oldReservationStep())
                 .next(oldPaymentStep())
                 .listener(jobTimeExecutionListener) // Listener 등록
@@ -78,7 +84,9 @@ public class OldRecordsBatch {
 
     @Bean
     public ItemProcessor<User, User> oldUserProcessor() {
+
         return user -> {
+            deleteUserIds.add(user.getId());
             user.userDeleted();
             return user;
         };
@@ -86,11 +94,54 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemWriter<User> oldUserWriter() {
+
         return new RepositoryItemWriterBuilder<User>()
                 .repository(userRepository)
                 .methodName("save")
                 .build();
     }
+
+    @Bean
+    public Step oldUserReservationStep() {
+
+        return new StepBuilder("oldUserReservationStep", jobRepository)
+                .<Reservation, Reservation>chunk(500, platformTransactionManager)
+                .reader(oldUserReservationReader())
+//                .processor(oldUserReservationProcessor())
+                .writer(oldUserReservationWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<Reservation> oldUserReservationReader() {
+
+        return new RepositoryItemReaderBuilder<Reservation>()
+                .name("oldUserReservationReader")
+                .pageSize(50)
+                .methodName("findByUserIdIn")
+                .arguments(Collections.singletonList(deleteUserIds))
+                .repository(reservationRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+//    @Bean
+//    public ItemProcessor<Reservation, Reservation> oldUserReservationProcessor() {
+//        return reservation -> {
+//            System.out.println(reservation.getUserId());
+//            return reservation;
+//        };
+//    }
+
+    @Bean
+    public RepositoryItemWriter<Reservation> oldUserReservationWriter() {
+
+        return new RepositoryItemWriterBuilder<Reservation>()
+                .repository(reservationRepository)
+                .methodName("delete")
+                .build();
+    }
+
 
     @Bean
     public Step oldReservationStep() {
