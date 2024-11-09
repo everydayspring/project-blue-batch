@@ -119,4 +119,14 @@ public class MainController {
         jobLauncher.run(jobRegistry.getJob("upcomingReservationAlertBatchJob"), jobParameters);
         return "Upcoming reservation alert batch job executed";
     }
+
+    @GetMapping("/reservationReviewAlertBatch")
+    public String reservationReviewAlertBatchApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+        jobLauncher.run(jobRegistry.getJob("reservationReviewAlertBatchJob"), jobParameters);
+        return "Reservation review alert batch job executed";
+    }
 }

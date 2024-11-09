@@ -20,7 +20,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Configuration
 @AllArgsConstructor
@@ -61,9 +64,6 @@ public class OldUsersBatch {
 
         return new StepBuilder("oldUserStep", jobRepository)
                 .<User, User>chunk(500, platformTransactionManager)
-                // chunk -> 몇개씩 끊어서 작업할건지
-                // 데이터 양과 메모리 성능을 고려해서 결정함
-                // 너무 작으면 오버헤드 발생, 너무 크면 자원 사용에 대한 비용과 실패 부담이 큼
                 .reader(oldUserReader())
                 .processor(oldUserProcessor())
                 .writer(oldUserWriter())

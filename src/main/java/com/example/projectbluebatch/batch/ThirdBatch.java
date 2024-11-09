@@ -1,8 +1,6 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.config.JobTimeExecutionListenerJdbc;
-import com.example.projectbluebatch.entity.User;
-import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -46,7 +44,6 @@ public class ThirdBatch {
     public Step thirdStep() {
         return new StepBuilder("thirdStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
-                    // 모든 User ID를 조회하고 한 번에 kakao_id 필드를 랜덤 값으로 업데이트
                     List<Long> userIds = jdbcTemplate.queryForList("SELECT id FROM users", Long.class);
                     Random random = new Random();
 

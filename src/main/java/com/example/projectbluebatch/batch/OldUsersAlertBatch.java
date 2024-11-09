@@ -119,7 +119,7 @@ public class OldUsersAlertBatch {
                         slackNotifier.sendMessage(title, message);
                     });
                     return RepeatStatus.FINISHED;
-                }, new ResourcelessTransactionManager()) // 트랜잭션 없이 수행
+                }, new ResourcelessTransactionManager())
                 .build();
     }
 }
