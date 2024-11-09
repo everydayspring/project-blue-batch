@@ -130,6 +130,25 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
   - 일시 : 2024-10-13 17:00
   - 관람장소: 
 
+아이디어
+
+-> 알람 전송용 Dto를 추가로 만들자!
+
+userName, performanceTitle, date, hallName
+userId, performanceId, roundId, hallId도 있어야겠다
+
+이 정보를 채우기 위해 reservation 먼저 조회해서 userId, RoundId, performanceId를 채움
+
+user를 조회해서 userName를 채움
+
+performance를 조회해서 performanceTitle, hallId를 채움
+
+round를 조회해서 date를 채움
+
+hall을 조회해서 hallName을 채움
+
+마지막 step으로 알람을 보내면 되지 않을까?
+
 ### ReservationReviewAlert
 
 매일 저녁 9시

@@ -31,8 +31,8 @@ public class User extends BaseEntity {
     @Column(name = "is_deleted")
     private boolean isDeleted;
 
-    @Column(name = "salck_id")
-    private Long slackId;
+    @Column(name = "slack_id")
+    private String slackId;
 
     public void userDeleted() {
 

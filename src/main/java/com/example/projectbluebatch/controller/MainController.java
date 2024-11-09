@@ -45,6 +45,19 @@ public class MainController {
         return "Old users batch job executed";
     }
 
+    @GetMapping("/oldUsersAlertBatch")
+    public String oldUsersAlertBatchApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+
+        jobLauncher.run(jobRegistry.getJob("oldUsersAlertBatchJob"), jobParameters);
+
+        return "Old users alert batch job executed";
+    }
+
     @GetMapping("/oldPerformancesBatch")
     public String oldPerformancesBatchApi() throws Exception {
         LocalDateTime now = LocalDateTime.now();
