@@ -24,7 +24,7 @@ import java.util.*;
 
 @Configuration
 @AllArgsConstructor
-public class OldRecordsBatch {
+public class OldUsersBatch {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
     private final JobTimeExecutionListener jobTimeExecutionListener;
@@ -37,24 +37,21 @@ public class OldRecordsBatch {
     private final UserRepository userRepository;
 
     private List<Long> deleteUserIds;
-
     private List<Long> deleteReservationIds;
 
     @Bean
-    public Job OldRecordsBatchJob() {
+    public Job OldUsersBatchJob() {
 
         deleteUserIds = new ArrayList<>();
         deleteReservationIds = new ArrayList<>();
 
-        return new JobBuilder("OldRecordsBatchJob", jobRepository)
+        return new JobBuilder("OldUsersBatchJob", jobRepository)
                 .start(oldUserStep())
                 .next(oldUserReservationStep())
                 .next(oldUserReservedSeatStep())
                 .next(oldUserPaymentStep())
                 .next(oldUserReviewStep())
                 .next(oldUserUsedCouponStep())
-                .next(oldReservationStep())
-                .next(oldPaymentStep())
                 .listener(jobTimeExecutionListener)
                 .build();
     }
@@ -273,76 +270,6 @@ public class OldRecordsBatch {
 
         return new RepositoryItemWriterBuilder<UsedCoupon>()
                 .repository(usedCouponRepository)
-                .methodName("delete")
-                .build();
-    }
-
-    @Bean
-    public Step oldReservationStep() {
-
-        return new StepBuilder("oldReservationStep", jobRepository)
-                .<Reservation, Reservation>chunk(500, platformTransactionManager)
-                .reader(oldReservationReader())
-                .writer(oldReservationWriter())
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemReader<Reservation> oldReservationReader() {
-
-        LocalDateTime targetDate = LocalDateTime.now().minusYears(10);
-
-        return new RepositoryItemReaderBuilder<Reservation>()
-                .name("oldReservationReader")
-                .pageSize(50)
-                .methodName("findAllOldReservation")
-                .arguments(targetDate)
-                .repository(reservationRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-
-    @Bean
-    public RepositoryItemWriter<Reservation> oldReservationWriter() {
-
-        return new RepositoryItemWriterBuilder<Reservation>()
-                .repository(reservationRepository)
-                .methodName("delete")
-                .build();
-    }
-
-    @Bean
-    public Step oldPaymentStep() {
-
-        return new StepBuilder("oldPaymentStep", jobRepository)
-                .<Payment, Payment>chunk(500, platformTransactionManager)
-                .reader(oldPaymentReader())
-                .writer(oldPaymentWriter())
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemReader<Payment> oldPaymentReader() {
-
-        LocalDateTime targetDate = LocalDateTime.now().minusYears(10);
-
-        return new RepositoryItemReaderBuilder<Payment>()
-                .name("oldPaymentReader")
-                .pageSize(50)
-                .methodName("findAllOldPayment")
-                .arguments(targetDate)
-                .repository(paymentRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-
-    @Bean
-    public RepositoryItemWriter<Payment> oldPaymentWriter() {
-
-        return new RepositoryItemWriterBuilder<Payment>()
-                .repository(paymentRepository)
                 .methodName("delete")
                 .build();
     }
