@@ -3,9 +3,11 @@ package com.example.projectbluebatch.batch;
 import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import com.example.projectbluebatch.entity.Payment;
 import com.example.projectbluebatch.entity.Reservation;
+import com.example.projectbluebatch.entity.ReservedSeat;
 import com.example.projectbluebatch.entity.User;
 import com.example.projectbluebatch.repository.PaymentRepository;
 import com.example.projectbluebatch.repository.ReservationRepository;
+import com.example.projectbluebatch.repository.ReservedSeatRepository;
 import com.example.projectbluebatch.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -35,19 +37,23 @@ public class OldRecordsBatch {
 
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservedSeatRepository reservedSeatRepository;
     private final UserRepository userRepository;
 
     private List<Long> deleteUserIds;
 
-    private final Set<Long> deleteReservationIds = new HashSet<>();
+    private List<Long> deleteReservationIds;
 
     @Bean
     public Job OldRecordsBatchJob() {
+
         deleteUserIds = new ArrayList<>();
+        deleteReservationIds = new ArrayList<>();
 
         return new JobBuilder("OldRecordsBatchJob", jobRepository)
                 .start(oldUserStep())
                 .next(oldUserReservationStep())
+                .next(oldUserReservedSeatStep())
                 .next(oldReservationStep())
                 .next(oldPaymentStep())
                 .listener(jobTimeExecutionListener) // Listener 등록
@@ -70,6 +76,7 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemReader<User> oldUserReader() {
+
         LocalDateTime targetDate = LocalDateTime.now().minusYears(3);
 
         return new RepositoryItemReaderBuilder<User>()
@@ -107,7 +114,7 @@ public class OldRecordsBatch {
         return new StepBuilder("oldUserReservationStep", jobRepository)
                 .<Reservation, Reservation>chunk(500, platformTransactionManager)
                 .reader(oldUserReservationReader())
-//                .processor(oldUserReservationProcessor())
+                .processor(oldUserReservationProcessor())
                 .writer(oldUserReservationWriter())
                 .build();
     }
@@ -125,19 +132,52 @@ public class OldRecordsBatch {
                 .build();
     }
 
-//    @Bean
-//    public ItemProcessor<Reservation, Reservation> oldUserReservationProcessor() {
-//        return reservation -> {
-//            System.out.println(reservation.getUserId());
-//            return reservation;
-//        };
-//    }
+    @Bean
+    public ItemProcessor<Reservation, Reservation> oldUserReservationProcessor() {
+
+        return reservation -> {
+            deleteReservationIds.add(reservation.getId());
+            return reservation;
+        };
+    }
 
     @Bean
     public RepositoryItemWriter<Reservation> oldUserReservationWriter() {
 
         return new RepositoryItemWriterBuilder<Reservation>()
                 .repository(reservationRepository)
+                .methodName("delete")
+                .build();
+    }
+
+    @Bean
+    public Step oldUserReservedSeatStep() {
+
+        return new StepBuilder("oldUserReservedSeatStep", jobRepository)
+                .<ReservedSeat, ReservedSeat>chunk(500, platformTransactionManager)
+                .reader(oldUserReservedSeatReader())
+                .writer(oldUserReservedSeatWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<ReservedSeat> oldUserReservedSeatReader() {
+
+        return new RepositoryItemReaderBuilder<ReservedSeat>()
+                .name("oldUserReservedSeatReader")
+                .pageSize(50)
+                .methodName("findByReservationIdIn")
+                .arguments(Collections.singletonList(deleteReservationIds))
+                .repository(reservedSeatRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemWriter<ReservedSeat> oldUserReservedSeatWriter() {
+
+        return new RepositoryItemWriterBuilder<ReservedSeat>()
+                .repository(reservedSeatRepository)
                 .methodName("delete")
                 .build();
     }
@@ -155,6 +195,7 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemReader<Reservation> oldReservationReader() {
+
         LocalDateTime targetDate = LocalDateTime.now().minusYears(10);
 
         return new RepositoryItemReaderBuilder<Reservation>()
@@ -170,6 +211,7 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemWriter<Reservation> oldReservationWriter() {
+
         return new RepositoryItemWriterBuilder<Reservation>()
                 .repository(reservationRepository)
                 .methodName("delete")
@@ -188,6 +230,7 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemReader<Payment> oldPaymentReader() {
+
         LocalDateTime targetDate = LocalDateTime.now().minusYears(10);
 
         return new RepositoryItemReaderBuilder<Payment>()
@@ -203,6 +246,7 @@ public class OldRecordsBatch {
 
     @Bean
     public RepositoryItemWriter<Payment> oldPaymentWriter() {
+
         return new RepositoryItemWriterBuilder<Payment>()
                 .repository(paymentRepository)
                 .methodName("delete")
