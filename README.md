@@ -99,22 +99,31 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
 - performance
   - 조건 : endDate 10년 전인 경우
   - performance 삭제
-  - 연결된 예매내역 삭제 O
-    - 예매내역에 연결된 좌석 삭제 O
-    - 예매내역에 연결된 결제 삭제 O
-    - 예매내역에 연결된 리뷰 삭제 O
-    - 예매내역에 연결된 사용 쿠폰 삭제 O
+  - 연결된 예매내역 삭제
+    - 예매내역에 연결된 좌석 삭제
+    - 예매내역에 연결된 결제 삭제
+    - 예매내역에 연결된 리뷰 삭제
+    - 예매내역에 연결된 사용 쿠폰 삭제
   - 연결된 회차 삭제
   - 연결된 출연자 삭제
   - 연결된 포스터 삭제
 
-### ReservationCancellation
+### TimeoutReservation
 
 매일 자정 실행
 
 - reservation
-  - 조건 : 결제 정보가 없는 경우
+  - 조건 : 예매 날짜가 어제인 경우 AND 결제 정보 없음 AND PENDING 상태
   - 예매 취소 처리
+  - 예매 좌석 삭제
+
+### TimeoutPayment
+
+매일 자정 실행
+
+- payment
+  - 조건 : READY AND modifiedAt이 30분 전보다 작은경우
+  - usedCoupon이 어느시점에 저장되는지 확인이 필요함
 
 ### UpcomingReservationAlert
 

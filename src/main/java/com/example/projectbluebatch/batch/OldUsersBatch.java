@@ -40,12 +40,12 @@ public class OldUsersBatch {
     private List<Long> deleteReservationIds;
 
     @Bean
-    public Job OldUsersBatchJob() {
+    public Job oldUsersBatchJob() {
 
         deleteUserIds = new ArrayList<>();
         deleteReservationIds = new ArrayList<>();
 
-        return new JobBuilder("OldUsersBatchJob", jobRepository)
+        return new JobBuilder("oldUsersBatchJob", jobRepository)
                 .start(oldUserStep())
                 .next(oldUserReservationStep())
                 .next(oldUserReservedSeatStep())

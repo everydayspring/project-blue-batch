@@ -30,4 +30,8 @@ public class Reservation extends BaseEntity {
 
     @Column(nullable = false)
     private Long price;
+
+    public void canceled() {
+        this.status = ReservationStatus.CANCELED;
+    }
 }
