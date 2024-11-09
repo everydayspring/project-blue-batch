@@ -8,9 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
     @Query("SELECT r FROM Reservation r WHERE r.modifiedAt <= :targetDate")
     Page<Reservation> findAllOldReservation(@Param("targetDate") LocalDateTime targetDate, Pageable pageable);
+
+    Page<Reservation> findByUserIdIn(List<Long> userIds, Pageable pageable);
 }

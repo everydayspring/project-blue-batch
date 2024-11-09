@@ -22,17 +22,16 @@ public class JobTimeExecutionListener implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution) {
-//        System.out.println("--------------------------JPA--------------------------");
-        System.out.println("--------------------------JDBC--------------------------");
-        System.out.println("Job 시작 시간: " + startTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        System.out.println("--------------------------JPA--------------------------");
+//        System.out.println("--------------------------JDBC--------------------------");
+        System.out.println("Job 시작 시간: " + startTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS")));
 
         LocalDateTime endTime = LocalDateTime.now(); // 종료 시간 기록
-        System.out.println("Job 종료 시간: " + endTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        // 소요 시간 계산
-        Duration duration = Duration.between(startTime, endTime);
-        System.out.println("Job 수행 시간: " + duration.toHoursPart() + "시간 " +
-                duration.toMinutesPart() + "분 " + duration.toSecondsPart() + "초");
+        System.out.println("Job 종료 시간: " + endTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS")));
 
+        // 소요 시간 계산 (밀리초 단위)
+        Duration duration = Duration.between(startTime, endTime);
+        System.out.println("Job 수행 시간: " + duration.toMillis() + "ms");
 
         // 처리된 데이터 개수 출력
         long processedCount = jobExecution.getStepExecutions().stream()
