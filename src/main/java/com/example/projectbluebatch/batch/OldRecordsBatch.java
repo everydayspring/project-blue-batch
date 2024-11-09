@@ -1,14 +1,8 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.config.JobTimeExecutionListener;
-import com.example.projectbluebatch.entity.Payment;
-import com.example.projectbluebatch.entity.Reservation;
-import com.example.projectbluebatch.entity.ReservedSeat;
-import com.example.projectbluebatch.entity.User;
-import com.example.projectbluebatch.repository.PaymentRepository;
-import com.example.projectbluebatch.repository.ReservationRepository;
-import com.example.projectbluebatch.repository.ReservedSeatRepository;
-import com.example.projectbluebatch.repository.UserRepository;
+import com.example.projectbluebatch.entity.*;
+import com.example.projectbluebatch.repository.*;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -38,6 +32,8 @@ public class OldRecordsBatch {
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
     private final ReservedSeatRepository reservedSeatRepository;
+    private final ReviewRepository reviewRepository;
+    private final UsedCouponRepository usedCouponRepository;
     private final UserRepository userRepository;
 
     private List<Long> deleteUserIds;
@@ -54,9 +50,12 @@ public class OldRecordsBatch {
                 .start(oldUserStep())
                 .next(oldUserReservationStep())
                 .next(oldUserReservedSeatStep())
+                .next(oldUserPaymentStep())
+                .next(oldUserReviewStep())
+                .next(oldUserUsedCouponStep())
                 .next(oldReservationStep())
                 .next(oldPaymentStep())
-                .listener(jobTimeExecutionListener) // Listener 등록
+                .listener(jobTimeExecutionListener)
                 .build();
     }
 
@@ -182,6 +181,101 @@ public class OldRecordsBatch {
                 .build();
     }
 
+    @Bean
+    public Step oldUserPaymentStep() {
+
+        return new StepBuilder("oldUserPaymentStep", jobRepository)
+                .<Payment, Payment>chunk(500, platformTransactionManager)
+                .reader(oldUserPaymentReader())
+                .writer(oldUserPaymentWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<Payment> oldUserPaymentReader() {
+
+        return new RepositoryItemReaderBuilder<Payment>()
+                .name("oldUserPaymentReader")
+                .pageSize(50)
+                .methodName("findByReservationIdIn")
+                .arguments(Collections.singletonList(deleteReservationIds))
+                .repository(paymentRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemWriter<Payment> oldUserPaymentWriter() {
+
+        return new RepositoryItemWriterBuilder<Payment>()
+                .repository(paymentRepository)
+                .methodName("delete")
+                .build();
+    }
+
+    @Bean
+    public Step oldUserReviewStep() {
+
+        return new StepBuilder("oldUserReviewStep", jobRepository)
+                .<Review, Review>chunk(500, platformTransactionManager)
+                .reader(oldUserReviewReader())
+                .writer(oldUserReviewWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<Review> oldUserReviewReader() {
+
+        return new RepositoryItemReaderBuilder<Review>()
+                .name("oldUserReviewReader")
+                .pageSize(50)
+                .methodName("findByReservationIdIn")
+                .arguments(Collections.singletonList(deleteReservationIds))
+                .repository(reviewRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemWriter<Review> oldUserReviewWriter() {
+
+        return new RepositoryItemWriterBuilder<Review>()
+                .repository(reviewRepository)
+                .methodName("delete")
+                .build();
+    }
+
+    @Bean
+    public Step oldUserUsedCouponStep() {
+
+        return new StepBuilder("oldUserUsedCouponStep", jobRepository)
+                .<UsedCoupon, UsedCoupon>chunk(500, platformTransactionManager)
+                .reader(oldUserUsedCouponReader())
+                .writer(oldUserUsedCouponWriter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemReader<UsedCoupon> oldUserUsedCouponReader() {
+
+        return new RepositoryItemReaderBuilder<UsedCoupon>()
+                .name("oldUserUsedCouponReader")
+                .pageSize(50)
+                .methodName("findByReservationIdIn")
+                .arguments(Collections.singletonList(deleteReservationIds))
+                .repository(usedCouponRepository)
+                .sorts(Map.of("id", Sort.Direction.ASC))
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemWriter<UsedCoupon> oldUserUsedCouponWriter() {
+
+        return new RepositoryItemWriterBuilder<UsedCoupon>()
+                .repository(usedCouponRepository)
+                .methodName("delete")
+                .build();
+    }
 
     @Bean
     public Step oldReservationStep() {

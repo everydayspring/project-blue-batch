@@ -74,7 +74,7 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
 
 ## 배치 구성
 
-### OldRecords
+### OldUsers
 
 매달 1일 실행
 
@@ -85,20 +85,27 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
 
 - user
   - 조건 : modifiedAt 3년 전인경우
-  - isDeleted true 변경
-  - 연결된 예매내역 삭제
-    - 예매내역에 연결된 좌석 삭제
-  - 리뷰 삭제
+  - isDeleted true 변경 O
+  - 연결된 예매내역 삭제 O
+    - 예매내역에 연결된 좌석 삭제 O
+    - 예매내역에 연결된 결제 삭제 O
+  - 리뷰 삭제 O
   - 사용 쿠폰 삭제
 
-- reservation
-  - 조건 : modifiedAt 10년 전인경우
-  - reservation 삭제
-  - 연결된 좌석, 연결된 결제 삭제
+### oldPerformances
 
-- payment
-    - 조건 : modifiedAt 10년 전인경우 + status가 DONE이 아닌경우
-    - payment 삭제
+매달 1일 실행
+
+- performance
+  - 조건 : endDate 10년 전인경우
+  - performance 삭제
+  - 연결된 예매내역 삭제
+    - 예매내역에 연결된 좌석 삭제
+    - 예매내역에 연결된 결제 삭제
+    - 예매내역에 연결된 사용 쿠폰 삭제
+  - 연결된 리뷰 삭제
+  - 연결된 출연자 삭제
+  - 연결된 포스터 삭제
 
 ### ReservationCancellation
 
