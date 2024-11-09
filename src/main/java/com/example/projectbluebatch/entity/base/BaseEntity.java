@@ -13,4 +13,8 @@ public abstract class BaseEntity extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    public void setId(long id) {
+        this.id = id;
+    }
 }

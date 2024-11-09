@@ -7,7 +7,6 @@ import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDateTime;
@@ -21,15 +20,42 @@ public class MainController {
     private final JobRegistry jobRegistry;
 
     @GetMapping("/first")
-    public String firstApi(@RequestParam("value") String value) throws Exception {
+    public String firstApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("date", value)
+                .addString("timestamp", now.toString())
                 .toJobParameters();
 
         jobLauncher.run(jobRegistry.getJob("firstJob"), jobParameters);
 
         return "First job executed";
+    }
+
+    @GetMapping("/second")
+    public String secondApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+
+        jobLauncher.run(jobRegistry.getJob("secondJob"), jobParameters);
+
+        return "Second job executed";
+    }
+
+    @GetMapping("/third")
+    public String thirdApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+
+        jobLauncher.run(jobRegistry.getJob("thirdJob"), jobParameters);
+
+        return "third job executed";
     }
 
     @GetMapping("/oldUsersBatch")
