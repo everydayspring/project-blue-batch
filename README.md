@@ -78,21 +78,25 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
 
 매달 1일 실행
 
-- Alert
-    - 조건 : modifiedAt 2년 전인 경우
-    - 비밀번호를 3년이상 변경하지 않은 회원은 탈퇴처리 됩니다
-    - 비밀번호를 변경해주세요
-
 - user
   - 조건 : modifiedAt 3년 전인 경우
-  - isDeleted true 변경 O
-  - 연결된 예매내역 삭제 O
-    - 예매내역에 연결된 좌석 삭제 O
-    - 예매내역에 연결된 결제 삭제 O
-    - 예매내역에 연결된 리뷰 삭제 O
-    - 예매내역에 연결된 사용 쿠폰 삭제 O
+  - isDeleted true 변경
+  - 연결된 예매내역 삭제
+    - 예매내역에 연결된 좌석 삭제
+    - 예매내역에 연결된 결제 삭제
+    - 예매내역에 연결된 리뷰 삭제
+    - 예매내역에 연결된 사용 쿠폰 삭제
 
-### oldPerformances
+### OldUsersAlert
+
+매달 1일 실행
+
+- Alert
+  - 조건 : modifiedAt 2년 전인 경우
+
+![](https://postfiles.pstatic.net/MjAyNDExMTFfMjQ0/MDAxNzMxMjk1MTgwMjA4.R2-elCOBEGLrwQLGxU3E2AIRrgch8QcJldtRWKaek7Ig.nkod2MXxAbMWxxKNdXhKPZFz4jjQvKqQElgM_4iINuwg.JPEG/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2024-11-11_121622.jpg?type=w966)
+
+### OldPerformances
 
 매달 1일 실행
 
@@ -125,12 +129,8 @@ org.springframework.batch:spring-batch-core:version > spring-batch-core-version.
 
 - Alert
   - 조건 : reservation - round의 날짜가 내일인경우
-  - *** 고객님 관람일이 바로 내일이에요!
-  - 상품명 : 
-  - 일시 : 2024-10-13 17:00
-  - 관람장소: 
 
-아이디어
+~~아이디어
 
 -> 알람 전송용 Dto를 추가로 만들자!
 
@@ -147,7 +147,11 @@ round를 조회해서 date를 채움
 
 hall을 조회해서 hallName을 채움
 
-마지막 step으로 알람을 보내면 되지 않을까?
+마지막 step으로 알람을 보내면 되지 않을까?~~
+
+-> JDBC JOIN 처리하면 됨!
+
+![](https://postfiles.pstatic.net/MjAyNDExMTFfODEg/MDAxNzMxMjk1MTgwMjA4.XEKutIMKumOKYq0fk4-3g9I0r0eMN_wQCJpmmQvMowAg.mYq0bMdnuNM8vC12Iwu8460VO1J_O2A-iFhWfskz5ecg.JPEG/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2024-11-11_121651.jpg?type=w966)
 
 ### ReservationReviewAlert
 
@@ -155,4 +159,5 @@ hall을 조회해서 hallName을 채움
 
 - Alert
   - 조건 : reservation - round의 날짜가 오늘인경우
-  - 관람 어떠셨나요? 리뷰를 남겨주세요
+
+![](https://postfiles.pstatic.net/MjAyNDExMTFfMTE1/MDAxNzMxMjk1MTgwMjA4.REheajdBXp-ws97iU_dV45TMvMD9Ri500qZ9HCbrnmwg.KYRJk8etTKsie37Nt4TAc4QsuJV5jVtigvIn21ZcnFcg.JPEG/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2024-11-11_121710.jpg?type=w966)
