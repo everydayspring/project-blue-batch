@@ -10,10 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Random;
 
@@ -47,9 +50,18 @@ public class ThirdBatch {
                     List<Long> userIds = jdbcTemplate.queryForList("SELECT id FROM users", Long.class);
                     Random random = new Random();
 
-                    userIds.forEach(id -> {
-                        Long randomKakaoId = random.nextLong();
-                        jdbcTemplate.update("UPDATE users SET kakao_id = ? WHERE id = ?", randomKakaoId, id);
+                    jdbcTemplate.batchUpdate("UPDATE users SET kakao_id = ? WHERE id = ?", new BatchPreparedStatementSetter() {
+                        @Override
+                        public void setValues(PreparedStatement ps, int i) throws SQLException {
+                            Long randomKakaoId = random.nextLong();
+                            ps.setLong(1, randomKakaoId);
+                            ps.setLong(2, userIds.get(i));
+                        }
+
+                        @Override
+                        public int getBatchSize() {
+                            return userIds.size();
+                        }
                     });
 
                     return null;
