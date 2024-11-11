@@ -156,7 +156,7 @@ public class TimeoutReservationBatch {
                 .name("timeoutReservationPaymentReader")
                 .pageSize(50)
                 .methodName("findByStatusAndReservationIdIn")
-                .arguments(PaymentStatus.READY, timeoutReservationIds) // 수정된 부분
+                .arguments(PaymentStatus.READY, timeoutReservationIds)
                 .repository(paymentRepository)
                 .sorts(Map.of("id", Sort.Direction.ASC))
                 .build();

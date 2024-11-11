@@ -15,7 +15,16 @@ spring:
     jdbc-url: jdbc:mysql://localhost:3306/project_blue?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  hikari:
+    maximumPoolSize: 30  # 커넥션 풀의 최대 커넥션 개수 설정
+    minimumIdle: 10    # 최소 유휴 커넥션 개수 설정
+    idleTimeout: 30000  # 유휴 커넥션의 유지 시간 (밀리초)
+    maxLifetime: 1800000 # 커넥션의 최대 생명 시간 (밀리초)
+    connectionTimeout: 20000 # 커넥션 풀에서 커넥션을 가져오기 위한 최대 대기 시간 (밀리초)
 
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL}
+
+#elastic:
+#  host: ${ES_URI}
