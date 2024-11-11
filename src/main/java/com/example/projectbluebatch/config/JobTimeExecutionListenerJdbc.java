@@ -22,7 +22,6 @@ public class JobTimeExecutionListenerJdbc implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution) {
-//        System.out.println("--------------------------JPA--------------------------");
         System.out.println("--------------------------JDBC--------------------------");
         System.out.println("Job 시작 시간: " + startTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS")));
 
@@ -36,7 +35,7 @@ public class JobTimeExecutionListenerJdbc implements JobExecutionListener {
         // 처리된 데이터 개수 출력
         long processedCount = jobExecution.getStepExecutions().stream()
                 .filter(stepExecution -> stepExecution.getStatus() == BatchStatus.COMPLETED)
-                .mapToLong(StepExecution::getWriteCount)
+                .mapToLong(StepExecution::getReadCount)
                 .sum();
         System.out.println("처리된 데이터 개수: " + processedCount + "개");
     }

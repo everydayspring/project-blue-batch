@@ -22,8 +22,7 @@ public class JobTimeExecutionListener implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution) {
-//        System.out.println("--------------------------JPA--------------------------");
-//        System.out.println("--------------------------JDBC--------------------------");
+        System.out.println("--------------------------JPA--------------------------");
         System.out.println("Job 시작 시간: " + startTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS")));
 
         LocalDateTime endTime = LocalDateTime.now(); // 종료 시간 기록

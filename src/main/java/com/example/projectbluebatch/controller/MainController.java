@@ -1,5 +1,8 @@
 package com.example.projectbluebatch.controller;
 
+import com.example.projectbluebatch.entity.User;
+import com.example.projectbluebatch.enums.UserRole;
+import com.example.projectbluebatch.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -10,11 +13,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
 @Controller
 @ResponseBody
 @AllArgsConstructor
 public class MainController {
+
+    private final UserRepository userRepository;
 
     private final JobLauncher jobLauncher;
     private final JobRegistry jobRegistry;
@@ -128,5 +134,22 @@ public class MainController {
                 .toJobParameters();
         jobLauncher.run(jobRegistry.getJob("reservationReviewAlertBatchJob"), jobParameters);
         return "Reservation review alert batch job executed";
+    }
+
+    @GetMapping("/")
+    public void test(){
+        // 사용자
+        IntStream.range(10000, 50000)
+                .forEach(
+                        i -> {
+                            User user =
+                                    new User(
+                                            "user" + i + "@example.com",
+                                            "User" + i,
+                                            "abc123?!",
+                                            UserRole.ROLE_USER);
+                            userRepository.save(user);
+                        });
+
     }
 }
