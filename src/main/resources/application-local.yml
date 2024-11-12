@@ -11,6 +11,7 @@ spring:
   batch:
     job:
       enabled: false
+      names: ${job.name:NONE}
     jdbc:
       initialize-schema: always
       schema: classpath:org/springframework/batch/core/schema-mysql.sql
