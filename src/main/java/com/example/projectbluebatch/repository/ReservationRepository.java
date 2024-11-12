@@ -16,6 +16,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     Page<Reservation> findByPerformanceIdIn(List<Long> performanceIds, Pageable pageable);
 
-    @Query("SELECT r FROM Reservation r WHERE FUNCTION('DATE', r.modifiedAt) = :targetDate AND r.paymentId IS NULL AND r.status = 'PENDING'")
+    @Query("SELECT r FROM Reservation r WHERE FUNCTION('DATE', r.modifiedAt) <= :targetDate AND r.paymentId IS NULL AND r.status = 'PENDING'")
     Page<Reservation> findAllTimeoutReservations(@Param("targetDate") LocalDate targetDate, Pageable pageable);
 }
