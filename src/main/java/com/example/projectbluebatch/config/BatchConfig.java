@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
+import java.util.Collection;
 import java.util.Map;
 
 @Configuration
@@ -30,10 +31,13 @@ public class BatchConfig {
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "spring.batch.job", name = "enabled", havingValue = "true", matchIfMissing = true)
     public JobLauncherApplicationRunner jobLauncherApplicationRunner(JobLauncher jobLauncher, JobExplorer jobExplorer,
-                                                                     JobRepository jobRepository, BatchProperties properties) {
+                                                                     JobRepository jobRepository, BatchProperties properties, Collection<Job> jobs) {
         JobLauncherApplicationRunner runner = new JobLauncherApplicationRunner(jobLauncher, jobExplorer, jobRepository);
         String jobNames = properties.getJob().getName();
         if (StringUtils.hasText(jobNames)) {
+            if (jobs.stream().map(Job::getName).noneMatch(s -> s.equals(jobNames))){
+                throw new IllegalArgumentException(jobNames + "는 등록되지 않은 job name입니다. job name을 확인하세요.");
+            }
             runner.setJobName(jobNames);
         }
         return runner;
