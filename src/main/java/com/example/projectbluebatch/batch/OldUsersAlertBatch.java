@@ -1,6 +1,5 @@
 package com.example.projectbluebatch.batch;
 
-import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import com.example.projectbluebatch.config.SlackNotifier;
 import com.example.projectbluebatch.entity.User;
 import org.springframework.batch.core.Job;
@@ -24,13 +23,11 @@ import java.time.LocalDateTime;
 public class OldUsersAlertBatch {
 
     private final JobRepository jobRepository;
-    private final JobTimeExecutionListener jobTimeExecutionListener;
     private final SlackNotifier slackNotifier;
     private final JdbcTemplate jdbcTemplate;
 
-    public OldUsersAlertBatch(JobRepository jobRepository, JobTimeExecutionListener jobTimeExecutionListener, SlackNotifier slackNotifier, @Qualifier("dataDBSource") DataSource dataDBSource) {
+    public OldUsersAlertBatch(JobRepository jobRepository, SlackNotifier slackNotifier, @Qualifier("dataDBSource") DataSource dataDBSource) {
         this.jobRepository = jobRepository;
-        this.jobTimeExecutionListener = jobTimeExecutionListener;
         this.slackNotifier = slackNotifier;
         this.jdbcTemplate = new JdbcTemplate(dataDBSource);
     }
@@ -39,7 +36,6 @@ public class OldUsersAlertBatch {
     public Job oldUsersAlertBatchJob() {
         return new JobBuilder("oldUsersAlertBatchJob", jobRepository)
                 .start(oldUserAlertStep())
-                .listener(jobTimeExecutionListener)
                 .build();
     }
 
@@ -52,7 +48,7 @@ public class OldUsersAlertBatch {
                     String query = "SELECT * FROM users WHERE modified_at < ?";
                     JdbcCursorItemReader<User> reader = new JdbcCursorItemReaderBuilder<User>()
                             .dataSource(jdbcTemplate.getDataSource())
-                            .name("oldUserAlertReader") // 이름 추가
+                            .name("oldUserAlertReader")
                             .sql(query)
                             .preparedStatementSetter((ps) -> ps.setObject(1, targetDate))
                             .rowMapper((rs, rowNum) -> {

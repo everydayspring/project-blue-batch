@@ -1,6 +1,5 @@
 package com.example.projectbluebatch.batch;
 
-import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -26,13 +25,11 @@ public class OldPerformancesBatch {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
-    private final JobTimeExecutionListener jobTimeExecutionListener;
     private final JdbcTemplate jdbcTemplate;
 
-    public OldPerformancesBatch(JobRepository jobRepository, PlatformTransactionManager platformTransactionManager, JobTimeExecutionListener jobTimeExecutionListener, @Qualifier("dataDBSource") DataSource dataDBSource) {
+    public OldPerformancesBatch(JobRepository jobRepository, PlatformTransactionManager platformTransactionManager, @Qualifier("dataDBSource") DataSource dataDBSource) {
         this.jobRepository = jobRepository;
         this.platformTransactionManager = platformTransactionManager;
-        this.jobTimeExecutionListener = jobTimeExecutionListener;
         this.jdbcTemplate = new JdbcTemplate(dataDBSource);
     }
 
@@ -51,7 +48,6 @@ public class OldPerformancesBatch {
                 .next(oldPerformanceRoundStep())
                 .next(oldPerformancePerformerStep())
                 .next(oldPerformancePosterStep())
-                .listener(jobTimeExecutionListener)
                 .build();
     }
 

@@ -2,7 +2,6 @@ package com.example.projectbluebatch.controller;
 
 import com.example.projectbluebatch.entity.User;
 import com.example.projectbluebatch.enums.UserRole;
-import com.example.projectbluebatch.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -20,7 +19,7 @@ import java.util.stream.IntStream;
 @AllArgsConstructor
 public class MainController {
 
-    private final UserRepository userRepository;
+//    private final UserRepository userRepository;
 
     private final JobLauncher jobLauncher;
     private final JobRegistry jobRegistry;
@@ -136,20 +135,20 @@ public class MainController {
         return "Reservation review alert batch job executed";
     }
 
-    @GetMapping("/")
-    public void test(){
-        // 사용자
-        IntStream.range(20000, 20001)
-                .forEach(
-                        i -> {
-                            User user =
-                                    new User(
-                                            "user" + i + "@example.com",
-                                            "User" + i,
-                                            "abc123?!",
-                                            UserRole.ROLE_USER);
-                            userRepository.save(user);
-                        });
-
-    }
+//    @GetMapping("/")
+//    public void test(){
+//        // 사용자
+//        IntStream.range(20000, 20001)
+//                .forEach(
+//                        i -> {
+//                            User user =
+//                                    new User(
+//                                            "user" + i + "@example.com",
+//                                            "User" + i,
+//                                            "abc123?!",
+//                                            UserRole.ROLE_USER);
+//                            userRepository.save(user);
+//                        });
+//
+//    }
 }

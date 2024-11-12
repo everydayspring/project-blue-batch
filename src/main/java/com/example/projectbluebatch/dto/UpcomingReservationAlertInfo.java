@@ -19,5 +19,4 @@ public class UpcomingReservationAlertInfo {
     private Long hallId;
     private LocalDateTime date;
     private String hallName;
-
 }

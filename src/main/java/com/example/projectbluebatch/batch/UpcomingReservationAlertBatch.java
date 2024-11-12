@@ -1,6 +1,5 @@
 package com.example.projectbluebatch.batch;
 
-import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import com.example.projectbluebatch.config.SlackNotifier;
 import com.example.projectbluebatch.dto.UpcomingReservationAlertInfo;
 import org.springframework.batch.core.Job;
@@ -26,20 +25,17 @@ import java.util.stream.Collectors;
 public class UpcomingReservationAlertBatch {
 
     private final JobRepository jobRepository;
-    private final JobTimeExecutionListener jobTimeExecutionListener;
     private final SlackNotifier slackNotifier;
     private final JdbcTemplate jdbcTemplate;
 
-    private List<UpcomingReservationAlertInfo> alertInfos;
-
     @Autowired
-    public UpcomingReservationAlertBatch(JobRepository jobRepository, JobTimeExecutionListener jobTimeExecutionListener,
-                                         SlackNotifier slackNotifier, @Qualifier("dataDBSource") DataSource dataDBSource) {
+    public UpcomingReservationAlertBatch(JobRepository jobRepository, SlackNotifier slackNotifier, @Qualifier("dataDBSource") DataSource dataDBSource) {
         this.jobRepository = jobRepository;
-        this.jobTimeExecutionListener = jobTimeExecutionListener;
         this.slackNotifier = slackNotifier;
         this.jdbcTemplate = new JdbcTemplate(dataDBSource);
     }
+
+    private List<UpcomingReservationAlertInfo> alertInfos;
 
     @Bean
     public Job upcomingReservationAlertBatchJob() {
@@ -86,14 +82,12 @@ public class UpcomingReservationAlertBatch {
 
         return new JobBuilder("upcomingReservationAlertBatchJob", jobRepository)
                 .start(upcomingReservationAlertSlackStep())
-                .listener(jobTimeExecutionListener)
                 .build();
     }
 
 
     @Bean
     public Step upcomingReservationAlertSlackStep() {
-
 
         return new StepBuilder("upcomingReservationAlertSlackStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {

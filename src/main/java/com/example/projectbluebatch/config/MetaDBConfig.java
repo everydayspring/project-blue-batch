@@ -13,9 +13,9 @@ import javax.sql.DataSource;
 @Configuration
 public class MetaDBConfig {
 
-    @Primary // DB가 두개일 때 충돌이 발생하지 않도록 함
+    @Primary
     @Bean
-    @ConfigurationProperties(prefix = "spring.datasource-meta") // yml 에서 지정한 이름으로 따라가도록 설정
+    @ConfigurationProperties(prefix = "spring.datasource-meta")
     public DataSource metaDBSource() {
 
         return DataSourceBuilder.create().build();

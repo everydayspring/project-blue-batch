@@ -1,6 +1,5 @@
 package com.example.projectbluebatch.batch;
 
-import com.example.projectbluebatch.config.JobTimeExecutionListener;
 import com.example.projectbluebatch.config.SlackNotifier;
 import com.example.projectbluebatch.dto.ReservationReviewAlertInfo;
 import org.springframework.batch.core.Job;
@@ -26,20 +25,17 @@ import java.util.stream.Collectors;
 public class ReservationReviewAlertBatch {
 
     private final JobRepository jobRepository;
-    private final JobTimeExecutionListener jobTimeExecutionListener;
     private final SlackNotifier slackNotifier;
     private final JdbcTemplate jdbcTemplate;
 
-    private List<ReservationReviewAlertInfo> alertInfos;
-
     @Autowired
-    public ReservationReviewAlertBatch(JobRepository jobRepository, JobTimeExecutionListener jobTimeExecutionListener,
-                                       SlackNotifier slackNotifier, @Qualifier("dataDBSource") DataSource dataDBSource) {
+    public ReservationReviewAlertBatch(JobRepository jobRepository, SlackNotifier slackNotifier, @Qualifier("dataDBSource") DataSource dataDBSource) {
         this.jobRepository = jobRepository;
-        this.jobTimeExecutionListener = jobTimeExecutionListener;
         this.slackNotifier = slackNotifier;
         this.jdbcTemplate = new JdbcTemplate(dataDBSource);
     }
+
+    private List<ReservationReviewAlertInfo> alertInfos;
 
     @Bean
     public Job reservationReviewAlertBatchJob() {
@@ -86,7 +82,6 @@ public class ReservationReviewAlertBatch {
 
         return new JobBuilder("reservationReviewAlertBatchJob", jobRepository)
                 .start(reservationReviewAlertSlackStep())
-                .listener(jobTimeExecutionListener)
                 .build();
     }
 
