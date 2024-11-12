@@ -1,57 +1,49 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.config.JobTimeExecutionListener;
-import com.example.projectbluebatch.entity.Payment;
-import com.example.projectbluebatch.entity.Reservation;
-import com.example.projectbluebatch.entity.ReservedSeat;
-import com.example.projectbluebatch.entity.UsedCoupon;
 import com.example.projectbluebatch.enums.PaymentStatus;
-import com.example.projectbluebatch.repository.PaymentRepository;
-import com.example.projectbluebatch.repository.ReservationRepository;
-import com.example.projectbluebatch.repository.ReservedSeatRepository;
-import com.example.projectbluebatch.repository.UsedCouponRepository;
-import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.data.RepositoryItemReader;
-import org.springframework.batch.item.data.RepositoryItemWriter;
-import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
-import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.util.CollectionUtils;
 
+import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Configuration
-@AllArgsConstructor
 public class TimeoutReservationBatch {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
     private final JobTimeExecutionListener jobTimeExecutionListener;
+    private final JdbcTemplate jdbcTemplate;
 
-    private final PaymentRepository paymentRepository;
-    private final ReservationRepository reservationRepository;
-    private final ReservedSeatRepository reservedSeatRepository;
-    private final UsedCouponRepository usedCouponRepository;
+    private List<Long> timeoutReservationIds = new ArrayList<>();
 
-    private List<Long> timeoutReservationIds;
+    public TimeoutReservationBatch(JobRepository jobRepository,
+                                   PlatformTransactionManager platformTransactionManager,
+                                   JobTimeExecutionListener jobTimeExecutionListener,
+                                   @Qualifier("dataDBSource") DataSource dataDBSource) {
+        this.jobRepository = jobRepository;
+        this.platformTransactionManager = platformTransactionManager;
+        this.jobTimeExecutionListener = jobTimeExecutionListener;
+        this.jdbcTemplate = new JdbcTemplate(dataDBSource);
+    }
 
     @Bean
     public Job timeoutReservationBatchJob() {
-
-        timeoutReservationIds = new ArrayList<>();
-
         return new JobBuilder("timeoutReservationBatchJob", jobRepository)
                 .start(timeoutReservationStep())
                 .next(timeoutReservationSeatStep())
@@ -63,152 +55,107 @@ public class TimeoutReservationBatch {
 
     @Bean
     public Step timeoutReservationStep() {
-
         return new StepBuilder("timeoutReservationStep", jobRepository)
-                .<Reservation, Reservation>chunk(500, platformTransactionManager)
-                .reader(timeoutReservationReader())
-                .processor(timeoutReservationProcessor())
-                .writer(timeoutReservationWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    LocalDate targetDate = LocalDate.now().minusDays(1);
+                    timeoutReservationIds = jdbcTemplate.queryForList(
+                            "SELECT id FROM reservations WHERE DATE(modified_at) <= ? AND status = 'PENDING'",
+                            Long.class, targetDate
+                    );
 
-    @Bean
-    public RepositoryItemReader<Reservation> timeoutReservationReader() {
+                    if (!CollectionUtils.isEmpty(timeoutReservationIds)) {
+                        jdbcTemplate.batchUpdate("UPDATE reservations SET status = 'CANCELED' WHERE id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, timeoutReservationIds.get(i));
+                            }
 
-        LocalDate targetDate = LocalDate.now().minusDays(1);
-
-        return new RepositoryItemReaderBuilder<Reservation>()
-                .name("timeoutReservationReader")
-                .pageSize(50)
-                .methodName("findAllTimeoutReservations")
-                .arguments(targetDate)
-                .repository(reservationRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public ItemProcessor<Reservation, Reservation> timeoutReservationProcessor() {
-
-        return reservation -> {
-            timeoutReservationIds.add(reservation.getId());
-            reservation.canceled();
-            return reservation;
-        };
-    }
-
-    @Bean
-    public RepositoryItemWriter<Reservation> timeoutReservationWriter() {
-
-        return new RepositoryItemWriterBuilder<Reservation>()
-                .repository(reservationRepository)
-                .methodName("save")
+                            @Override
+                            public int getBatchSize() {
+                                return timeoutReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step timeoutReservationSeatStep() {
-
         return new StepBuilder("timeoutReservationSeatStep", jobRepository)
-                .<ReservedSeat, ReservedSeat>chunk(500, platformTransactionManager)
-                .reader(timeoutReservationSeatReader())
-                .writer(timeoutReservationSeatWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(timeoutReservationIds)) {
+                        jdbcTemplate.batchUpdate("DELETE FROM reserved_seats WHERE reservation_id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, timeoutReservationIds.get(i));
+                            }
 
-    @Bean
-    public RepositoryItemReader<ReservedSeat> timeoutReservationSeatReader() {
-
-        return new RepositoryItemReaderBuilder<ReservedSeat>()
-                .name("timeoutReservationSeatReader")
-                .pageSize(50)
-                .methodName("findByReservationIdIn")
-                .arguments(Collections.singletonList(timeoutReservationIds))
-                .repository(reservedSeatRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemWriter<ReservedSeat> timeoutReservationSeatWriter() {
-
-        return new RepositoryItemWriterBuilder<ReservedSeat>()
-                .repository(reservedSeatRepository)
-                .methodName("delete")
+                            @Override
+                            public int getBatchSize() {
+                                return timeoutReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step timeoutReservationPaymentStep() {
-
         return new StepBuilder("timeoutReservationPaymentStep", jobRepository)
-                .<Payment, Payment>chunk(500, platformTransactionManager)
-                .reader(timeoutReservationPaymentReader())
-                .processor(timeoutReservationPaymentProcessor())
-                .writer(timeoutReservationPaymentWriter())
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(timeoutReservationIds)) {
+                        // timeoutReservationIds의 크기에 따라 동적으로 ?를 생성
+                        String placeholders = String.join(",", timeoutReservationIds.stream().map(id -> "?").toArray(String[]::new));
+                        String query = String.format(
+                                "UPDATE payments SET status = 'CANCELED' WHERE status = ? AND reservation_id IN (%s)", placeholders
+                        );
+
+                        jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                // 첫 번째 파라미터는 status
+                                ps.setString(1, PaymentStatus.READY.toString());
+                                // 두 번째부터 reservation_id 바인딩
+                                for (int j = 0; j < timeoutReservationIds.size(); j++) {
+                                    ps.setLong(j + 2, timeoutReservationIds.get(j));
+                                }
+                            }
+
+                            @Override
+                            public int getBatchSize() {
+                                return 1; // 쿼리 한 번에 모든 id를 전달하기 때문에 1로 설정
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
-    @Bean
-    public RepositoryItemReader<Payment> timeoutReservationPaymentReader() {
-
-        return new RepositoryItemReaderBuilder<Payment>()
-                .name("timeoutReservationPaymentReader")
-                .pageSize(50)
-                .methodName("findByStatusAndReservationIdIn")
-                .arguments(PaymentStatus.READY, timeoutReservationIds)
-                .repository(paymentRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public ItemProcessor<Payment, Payment> timeoutReservationPaymentProcessor() {
-
-        return payment -> {
-            payment.canceled();
-            return payment;
-        };
-    }
-
-    @Bean
-    public RepositoryItemWriter<Payment> timeoutReservationPaymentWriter() {
-
-        return new RepositoryItemWriterBuilder<Payment>()
-                .repository(paymentRepository)
-                .methodName("save")
-                .build();
-    }
 
     @Bean
     public Step timeoutReservationUsedCouponStep() {
-
         return new StepBuilder("timeoutReservationUsedCouponStep", jobRepository)
-                .<UsedCoupon, UsedCoupon>chunk(500, platformTransactionManager)
-                .reader(timeoutReservationUsedCouponReader())
-                .writer(timeoutReservationUsedCouponWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(timeoutReservationIds)) {
+                        jdbcTemplate.batchUpdate("DELETE FROM used_coupon WHERE reservation_id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, timeoutReservationIds.get(i));
+                            }
 
-    @Bean
-    public RepositoryItemReader<UsedCoupon> timeoutReservationUsedCouponReader() {
-
-        return new RepositoryItemReaderBuilder<UsedCoupon>()
-                .name("timeoutReservationUsedCouponReader")
-                .pageSize(50)
-                .methodName("findByReservationIdIn")
-                .arguments(Collections.singletonList(timeoutReservationIds))
-                .repository(usedCouponRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemWriter<UsedCoupon> timeoutReservationUsedCouponWriter() {
-
-        return new RepositoryItemWriterBuilder<UsedCoupon>()
-                .repository(usedCouponRepository)
-                .methodName("delete")
+                            @Override
+                            public int getBatchSize() {
+                                return timeoutReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 }
