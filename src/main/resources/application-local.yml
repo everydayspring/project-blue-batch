@@ -1,34 +1,31 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /
+    encoding:
+      charset : UTF-8
+      enabled: true
+      force: true
+
 spring:
   batch:
     job:
-      enabled: false # 배치 자동 실행을 막음
+      enabled: false
     jdbc:
-      initialize-schema: always # 메타 테이블 자동 생성 설정
-      schema: classpath:org/springframework/batch/core/schema-mysql.sql # 사용 DB를 명시해줌 (자동으로 해주지만 혹시 모르니 지정해줄것)
+      initialize-schema: always
+      schema: classpath:org/springframework/batch/core/schema-mysql.sql
   datasource-meta:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://localhost:3306/project_blue_meta?rewriteBatchedStatements=true
-#    jdbc-url: jdbc:mysql://localhost:3306/project_blue_meta?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    jdbc-url: ${META_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   datasource-data:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://localhost:3306/project_blue?rewriteBatchedStatements=true # 배치 형태 SQL 재작성
-    #    jdbc-url: jdbc:mysql://localhost:3306/project_blue?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true # 배치 형태 SQL 재작성
+    jdbc-url: ${DATA_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  hikari:
-    maximumPoolSize: 33  # 커넥션 풀의 최대 커넥션 개수 설정
-    minimumIdle: 10    # 최소 유휴 커넥션 개수 설정
-    idleTimeout: 30000  # 유휴 커넥션의 유지 시간 (밀리초)
-    maxLifetime: 1800000 # 커넥션의 최대 생명 시간 (밀리초)
-    connectionTimeout: 20000 # 커넥션 풀에서 커넥션을 가져오기 위한 최대 대기 시간 (밀리초)
+
 
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL}
-
-#elastic:
-#  host: ${ES_URI}
-
-# rewriteBatchedStatements=true # 배치 형태 SQL 재작성 옵션
