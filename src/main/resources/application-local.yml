@@ -7,16 +7,18 @@ spring:
       schema: classpath:org/springframework/batch/core/schema-mysql.sql # 사용 DB를 명시해줌 (자동으로 해주지만 혹시 모르니 지정해줄것)
   datasource-meta:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://localhost:3306/project_blue_meta?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    jdbc-url: jdbc:mysql://localhost:3306/project_blue_meta?rewriteBatchedStatements=true
+#    jdbc-url: jdbc:mysql://localhost:3306/project_blue_meta?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   datasource-data:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://localhost:3306/project_blue?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    jdbc-url: jdbc:mysql://localhost:3306/project_blue?rewriteBatchedStatements=true # 배치 형태 SQL 재작성
+    #    jdbc-url: jdbc:mysql://localhost:3306/project_blue?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true # 배치 형태 SQL 재작성
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   hikari:
-    maximumPoolSize: 30  # 커넥션 풀의 최대 커넥션 개수 설정
+    maximumPoolSize: 33  # 커넥션 풀의 최대 커넥션 개수 설정
     minimumIdle: 10    # 최소 유휴 커넥션 개수 설정
     idleTimeout: 30000  # 유휴 커넥션의 유지 시간 (밀리초)
     maxLifetime: 1800000 # 커넥션의 최대 생명 시간 (밀리초)
@@ -28,3 +30,5 @@ slack:
 
 #elastic:
 #  host: ${ES_URI}
+
+# rewriteBatchedStatements=true # 배치 형태 SQL 재작성 옵션

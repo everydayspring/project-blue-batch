@@ -34,7 +34,7 @@ public class SecondBatch {
     public Job secondJob() {
         return new JobBuilder("secondJob", jobRepository)
                 .start(secondStep())
-                .listener(jobTimeExecutionListener)
+//                .listener(jobTimeExecutionListener)z
                 .build();
     }
 

@@ -139,7 +139,7 @@ public class MainController {
     @GetMapping("/")
     public void test(){
         // 사용자
-        IntStream.range(10000, 50000)
+        IntStream.range(20000, 20001)
                 .forEach(
                         i -> {
                             User user =
