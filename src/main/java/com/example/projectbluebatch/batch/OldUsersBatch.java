@@ -1,53 +1,45 @@
 package com.example.projectbluebatch.batch;
 
 import com.example.projectbluebatch.config.JobTimeExecutionListener;
-import com.example.projectbluebatch.entity.*;
-import com.example.projectbluebatch.repository.*;
-import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.data.RepositoryItemReader;
-import org.springframework.batch.item.data.RepositoryItemWriter;
-import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
-import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.util.CollectionUtils;
 
+import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Configuration
-@AllArgsConstructor
 public class OldUsersBatch {
+
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
     private final JobTimeExecutionListener jobTimeExecutionListener;
+    private final JdbcTemplate jdbcTemplate;
 
-    private final PaymentRepository paymentRepository;
-    private final ReservationRepository reservationRepository;
-    private final ReservedSeatRepository reservedSeatRepository;
-    private final ReviewRepository reviewRepository;
-    private final UsedCouponRepository usedCouponRepository;
-    private final UserRepository userRepository;
+    public OldUsersBatch(JobRepository jobRepository, PlatformTransactionManager platformTransactionManager, JobTimeExecutionListener jobTimeExecutionListener, @Qualifier("dataDBSource") DataSource dataDBSource) {
+        this.jobRepository = jobRepository;
+        this.platformTransactionManager = platformTransactionManager;
+        this.jobTimeExecutionListener = jobTimeExecutionListener;
+        this.jdbcTemplate = new JdbcTemplate(dataDBSource);
+    }
 
     private List<Long> deleteUserIds;
     private List<Long> deleteReservationIds;
 
     @Bean
     public Job oldUsersBatchJob() {
-
-        deleteUserIds = new ArrayList<>();
-        deleteReservationIds = new ArrayList<>();
-
         return new JobBuilder("oldUsersBatchJob", jobRepository)
                 .start(oldUserStep())
                 .next(oldUserReservationStep())
@@ -61,216 +53,146 @@ public class OldUsersBatch {
 
     @Bean
     public Step oldUserStep() {
-
         return new StepBuilder("oldUserStep", jobRepository)
-                .<User, User>chunk(500, platformTransactionManager)
-                .reader(oldUserReader())
-                .processor(oldUserProcessor())
-                .writer(oldUserWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    LocalDateTime targetDate = LocalDateTime.now().minusYears(3);
+                    deleteUserIds = jdbcTemplate.queryForList(
+                            "SELECT id FROM users WHERE modified_at <= ?",
+                            Long.class, targetDate
+                    );
 
-    @Bean
-    public RepositoryItemReader<User> oldUserReader() {
+                    if (!CollectionUtils.isEmpty(deleteUserIds)) {
+                        jdbcTemplate.batchUpdate("UPDATE users SET is_deleted = TRUE WHERE id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, deleteUserIds.get(i));
+                            }
 
-        LocalDateTime targetDate = LocalDateTime.now().minusYears(3);
-
-        return new RepositoryItemReaderBuilder<User>()
-                .name("oldUserReader")
-                .pageSize(50)
-                .methodName("findAllOldUser")
-                .arguments(targetDate)
-                .repository(userRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public ItemProcessor<User, User> oldUserProcessor() {
-
-        return user -> {
-            deleteUserIds.add(user.getId());
-            user.userDeleted();
-            return user;
-        };
-    }
-
-    @Bean
-    public RepositoryItemWriter<User> oldUserWriter() {
-
-        return new RepositoryItemWriterBuilder<User>()
-                .repository(userRepository)
-                .methodName("save")
+                            @Override
+                            public int getBatchSize() {
+                                return deleteUserIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step oldUserReservationStep() {
-
         return new StepBuilder("oldUserReservationStep", jobRepository)
-                .<Reservation, Reservation>chunk(500, platformTransactionManager)
-                .reader(oldUserReservationReader())
-                .processor(oldUserReservationProcessor())
-                .writer(oldUserReservationWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(deleteUserIds)) {
+                        deleteReservationIds = jdbcTemplate.queryForList(
+                                "SELECT id FROM reservations WHERE user_id IN (?)",
+                                Long.class, deleteUserIds.toArray()
+                        );
 
-    @Bean
-    public RepositoryItemReader<Reservation> oldUserReservationReader() {
+                        if (!CollectionUtils.isEmpty(deleteReservationIds)) {
+                            jdbcTemplate.batchUpdate("DELETE FROM reservations WHERE id = ?", new BatchPreparedStatementSetter() {
+                                @Override
+                                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                    ps.setLong(1, deleteReservationIds.get(i));
+                                }
 
-        return new RepositoryItemReaderBuilder<Reservation>()
-                .name("oldUserReservationReader")
-                .pageSize(50)
-                .methodName("findByUserIdIn")
-                .arguments(Collections.singletonList(deleteUserIds))
-                .repository(reservationRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public ItemProcessor<Reservation, Reservation> oldUserReservationProcessor() {
-
-        return reservation -> {
-            deleteReservationIds.add(reservation.getId());
-            return reservation;
-        };
-    }
-
-    @Bean
-    public RepositoryItemWriter<Reservation> oldUserReservationWriter() {
-
-        return new RepositoryItemWriterBuilder<Reservation>()
-                .repository(reservationRepository)
-                .methodName("delete")
+                                @Override
+                                public int getBatchSize() {
+                                    return deleteReservationIds.size();
+                                }
+                            });
+                        }
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step oldUserReservedSeatStep() {
-
         return new StepBuilder("oldUserReservedSeatStep", jobRepository)
-                .<ReservedSeat, ReservedSeat>chunk(500, platformTransactionManager)
-                .reader(oldUserReservedSeatReader())
-                .writer(oldUserReservedSeatWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(deleteReservationIds)) {
+                        jdbcTemplate.batchUpdate("DELETE FROM reserved_seats WHERE reservation_id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, deleteReservationIds.get(i));
+                            }
 
-    @Bean
-    public RepositoryItemReader<ReservedSeat> oldUserReservedSeatReader() {
-
-        return new RepositoryItemReaderBuilder<ReservedSeat>()
-                .name("oldUserReservedSeatReader")
-                .pageSize(50)
-                .methodName("findByReservationIdIn")
-                .arguments(Collections.singletonList(deleteReservationIds))
-                .repository(reservedSeatRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemWriter<ReservedSeat> oldUserReservedSeatWriter() {
-
-        return new RepositoryItemWriterBuilder<ReservedSeat>()
-                .repository(reservedSeatRepository)
-                .methodName("delete")
+                            @Override
+                            public int getBatchSize() {
+                                return deleteReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step oldUserPaymentStep() {
-
         return new StepBuilder("oldUserPaymentStep", jobRepository)
-                .<Payment, Payment>chunk(500, platformTransactionManager)
-                .reader(oldUserPaymentReader())
-                .writer(oldUserPaymentWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(deleteReservationIds)) {
+                        jdbcTemplate.batchUpdate("DELETE FROM payments WHERE reservation_id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, deleteReservationIds.get(i));
+                            }
 
-    @Bean
-    public RepositoryItemReader<Payment> oldUserPaymentReader() {
-
-        return new RepositoryItemReaderBuilder<Payment>()
-                .name("oldUserPaymentReader")
-                .pageSize(50)
-                .methodName("findByReservationIdIn")
-                .arguments(Collections.singletonList(deleteReservationIds))
-                .repository(paymentRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemWriter<Payment> oldUserPaymentWriter() {
-
-        return new RepositoryItemWriterBuilder<Payment>()
-                .repository(paymentRepository)
-                .methodName("delete")
+                            @Override
+                            public int getBatchSize() {
+                                return deleteReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step oldUserReviewStep() {
-
         return new StepBuilder("oldUserReviewStep", jobRepository)
-                .<Review, Review>chunk(500, platformTransactionManager)
-                .reader(oldUserReviewReader())
-                .writer(oldUserReviewWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(deleteReservationIds)) {
+                        jdbcTemplate.batchUpdate("DELETE FROM reviews WHERE reservation_id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, deleteReservationIds.get(i));
+                            }
 
-    @Bean
-    public RepositoryItemReader<Review> oldUserReviewReader() {
-
-        return new RepositoryItemReaderBuilder<Review>()
-                .name("oldUserReviewReader")
-                .pageSize(50)
-                .methodName("findByReservationIdIn")
-                .arguments(Collections.singletonList(deleteReservationIds))
-                .repository(reviewRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemWriter<Review> oldUserReviewWriter() {
-
-        return new RepositoryItemWriterBuilder<Review>()
-                .repository(reviewRepository)
-                .methodName("delete")
+                            @Override
+                            public int getBatchSize() {
+                                return deleteReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step oldUserUsedCouponStep() {
-
         return new StepBuilder("oldUserUsedCouponStep", jobRepository)
-                .<UsedCoupon, UsedCoupon>chunk(500, platformTransactionManager)
-                .reader(oldUserUsedCouponReader())
-                .writer(oldUserUsedCouponWriter())
-                .build();
-    }
+                .tasklet((contribution, chunkContext) -> {
+                    if (!CollectionUtils.isEmpty(deleteReservationIds)) {
+                        jdbcTemplate.batchUpdate("DELETE FROM used_coupon WHERE reservation_id = ?", new BatchPreparedStatementSetter() {
+                            @Override
+                            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                                ps.setLong(1, deleteReservationIds.get(i));
+                            }
 
-    @Bean
-    public RepositoryItemReader<UsedCoupon> oldUserUsedCouponReader() {
-
-        return new RepositoryItemReaderBuilder<UsedCoupon>()
-                .name("oldUserUsedCouponReader")
-                .pageSize(50)
-                .methodName("findByReservationIdIn")
-                .arguments(Collections.singletonList(deleteReservationIds))
-                .repository(usedCouponRepository)
-                .sorts(Map.of("id", Sort.Direction.ASC))
-                .build();
-    }
-
-    @Bean
-    public RepositoryItemWriter<UsedCoupon> oldUserUsedCouponWriter() {
-
-        return new RepositoryItemWriterBuilder<UsedCoupon>()
-                .repository(usedCouponRepository)
-                .methodName("delete")
+                            @Override
+                            public int getBatchSize() {
+                                return deleteReservationIds.size();
+                            }
+                        });
+                    }
+                    return null;
+                }, platformTransactionManager)
                 .build();
     }
 }
