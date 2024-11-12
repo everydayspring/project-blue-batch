@@ -21,10 +21,6 @@ public class JobRunner implements CommandLineRunner {
     @Autowired
     private Map<String, Job> jobs;
 
-    @Autowired
-    @Qualifier("dataDBSource")
-    private DataSource dataDBSource;
-
     @Override
     public void run(String... args) throws Exception {
         String jobName = System.getProperty("job.name");

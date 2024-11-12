@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing
-@EnableBatchProcessing
+//@EnableBatchProcessing
 public class ProjectBlueBatchApplication {
 
     public static void main(String[] args) {
