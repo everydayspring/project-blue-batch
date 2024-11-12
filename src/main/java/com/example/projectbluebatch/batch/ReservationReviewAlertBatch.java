@@ -90,7 +90,7 @@ public class ReservationReviewAlertBatch {
         return new StepBuilder("reservationReviewAlertSlackStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
                     alertInfos.forEach(alertInfo -> {
-                        String title = "[관람일 D-Day]";
+                        String title = "[관람평 안내]";
                         String userTag = alertInfo.getSlackId() != null && !alertInfo.getSlackId().isEmpty()
                                 ? "<@" + alertInfo.getSlackId() + ">"
                                 : "";
