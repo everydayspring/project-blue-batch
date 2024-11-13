@@ -15,7 +15,6 @@ import java.util.HashMap;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = "com.example.projectbluebatch.repository",
         entityManagerFactoryRef = "dataEntityManager",
         transactionManagerRef = "dataTransactionManager"
 )
@@ -34,7 +33,7 @@ public class DataDBConfig {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
 
         em.setDataSource(dataDBSource());
-        em.setPackagesToScan(new String[]{"com.example.projectbluebatch.entity"});
+        em.setPackagesToScan("com.example.projectbluebatch.entity");
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
 
         HashMap<String, Object> properties = new HashMap<>();
