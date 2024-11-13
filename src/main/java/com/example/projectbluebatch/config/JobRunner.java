@@ -6,8 +6,10 @@ import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -22,6 +24,7 @@ public class JobRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         String jobName = System.getProperty("job.name");
+        String port = System.getProperty("server.port", "8081");  // 기본값 8081
 
         if (jobName != null && jobs.containsKey(jobName)) {
             Job job = jobs.get(jobName);
@@ -44,5 +47,15 @@ public class JobRunner implements CommandLineRunner {
             System.out.println("Job name not found or specified.");
             System.exit(1);
         }
+    }
+
+    public static void main(String[] args) {
+        Map<String, Object> properties = new HashMap<>();
+        String port = System.getProperty("server.port", "8081");
+        properties.put("server.port", port);
+
+        SpringApplication app = new SpringApplication(JobRunner.class);
+        app.setDefaultProperties(properties);
+        app.run(args);
     }
 }
