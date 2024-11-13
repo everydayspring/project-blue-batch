@@ -34,12 +34,15 @@ public class JobRunner implements CommandLineRunner {
             try {
                 jobLauncher.run(job, jobParameters);
                 System.out.println("Job " + jobName + " completed successfully.");
+                System.exit(0);
             } catch (Exception e) {
                 System.err.println("Job " + jobName + " failed: " + e.getMessage());
                 e.printStackTrace();
+                System.exit(1);
             }
         } else {
             System.out.println("Job name not found or specified.");
+            System.exit(1);
         }
     }
 }
