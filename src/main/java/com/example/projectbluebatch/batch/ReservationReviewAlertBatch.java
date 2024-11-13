@@ -45,7 +45,7 @@ public class ReservationReviewAlertBatch {
                         FROM rounds r
                         WHERE DATE(r.date) = DATE(?)
                         """,
-                new Object[]{LocalDateTime.now()},
+                new Object[]{LocalDateTime.now().minusDays(1)},
                 Long.class
         );
 
