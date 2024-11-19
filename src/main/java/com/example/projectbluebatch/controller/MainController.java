@@ -46,9 +46,9 @@ public class MainController {
                 .addString("timestamp", now.toString())
                 .toJobParameters();
 
-        jobLauncher.run(jobRegistry.getJob("secondJob"), jobParameters);
+        jobLauncher.run(jobRegistry.getJob("JPA_SPEED_TEST_JOB"), jobParameters);
 
-        return "Second job executed";
+        return "JPA_SPEED_TEST_JOB";
     }
 
     @GetMapping("/third")
@@ -59,9 +59,22 @@ public class MainController {
                 .addString("timestamp", now.toString())
                 .toJobParameters();
 
-        jobLauncher.run(jobRegistry.getJob("thirdJob"), jobParameters);
+        jobLauncher.run(jobRegistry.getJob("JDBC_SPEED_TEST_JOB"), jobParameters);
 
-        return "third job executed";
+        return "JDBC_SPEED_TEST_JOB";
+    }
+
+    @GetMapping("/fourth")
+    public String fourthApi() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("timestamp", now.toString())
+                .toJobParameters();
+
+        jobLauncher.run(jobRegistry.getJob("JDBC_THREAD_SPEED_TEST_JOB"), jobParameters);
+
+        return "JDBC_THREAD_SPEED_TEST_JOB";
     }
 
     @GetMapping("/oldUsersBatch")
@@ -139,7 +152,7 @@ public class MainController {
     @GetMapping("/")
     public void test(){
         // 사용자
-        IntStream.range(20000, 20001)
+        IntStream.range(10001, 100001)
                 .forEach(
                         i -> {
                             User user =

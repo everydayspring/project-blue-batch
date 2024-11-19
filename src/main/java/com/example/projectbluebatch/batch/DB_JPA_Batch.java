@@ -24,7 +24,7 @@ import java.util.Random;
 
 @Configuration
 @AllArgsConstructor
-public class SecondBatch {
+public class DB_JPA_Batch {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
     private final JobTimeExecutionListener jobTimeExecutionListener;
@@ -32,7 +32,7 @@ public class SecondBatch {
 
     @Bean
     public Job secondJob() {
-        return new JobBuilder("secondJob", jobRepository)
+        return new JobBuilder("JPA_SPEED_TEST_JOB", jobRepository)
                 .start(secondStep())
 //                .listener(jobTimeExecutionListener)z
                 .build();
@@ -40,7 +40,7 @@ public class SecondBatch {
 
     @Bean
     public Step secondStep() {
-        return new StepBuilder("secondStep", jobRepository)
+        return new StepBuilder("JPA_SPEED_TEST_JOB_STEP", jobRepository)
                 .<User, User>chunk(500, platformTransactionManager)
                 .reader(secondBeforeReader())
                 .processor(secondMiddleProcessor())

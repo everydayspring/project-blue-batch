@@ -9,10 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -22,15 +20,15 @@ import java.util.List;
 import java.util.Random;
 
 @Configuration
-public class ThirdBatch {
+public class DB_JDBC_Batch {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public ThirdBatch(JobRepository jobRepository,
-                      PlatformTransactionManager transactionManager,
-                      @Qualifier("dataDBSource") DataSource dataSource) {
+    public DB_JDBC_Batch(JobRepository jobRepository,
+                         PlatformTransactionManager transactionManager,
+                         @Qualifier("dataDBSource") DataSource dataSource) {
         this.jobRepository = jobRepository;
         this.transactionManager = transactionManager;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -38,7 +36,7 @@ public class ThirdBatch {
 
     @Bean
     public Job thirdJob() {
-        return new JobBuilder("thirdJob", jobRepository)
+        return new JobBuilder("JDBC_SPEED_TEST_JOB", jobRepository)
                 .start(thirdStep())
                 // jobTimeExecutionListener 추가
                 .build();
@@ -75,7 +73,7 @@ public class ThirdBatch {
 
     @Bean
     public Step thirdStep() {
-        return new StepBuilder("thirdStep", jobRepository)
+        return new StepBuilder("JDBC_SPEED_TEST_JOB_STEP", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
                     // user IDs 조회
                     List<Long> userIds = jdbcTemplate.queryForList("SELECT id FROM users", Long.class);
